@@ -1,5 +1,5 @@
 (function () {
-  const SERVER = 'http://localhost:3000';
+  const SERVER = 'https://scan-to-fill.onrender.com';
 
   // Remove any previous instance
   document.getElementById('stf-host')?.remove();

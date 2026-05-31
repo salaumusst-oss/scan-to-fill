@@ -1,5 +1,5 @@
 // ── Defaults ──────────────────────────────────────────────────────────────────
-const DEFAULT_SERVER = 'http://localhost:3000';
+const DEFAULT_SERVER = 'https://scan-to-fill.onrender.com';
 
 function randomRoom() {
   return Math.random().toString(36).substr(2, 4).toUpperCase();
@@ -8,14 +8,14 @@ function randomRoom() {
 // ── Load saved settings (server URL + room code) ──────────────────────────────
 async function getSettings() {
   return new Promise(resolve => {
-    chrome.storage.local.get({ serverUrl: DEFAULT_SERVER, roomCode: '' }, data => {
+    chrome.storage.local.get({ roomCode: '' }, data => {
       if (!data.roomCode) {
-        // First time — generate a random room code and save it
         const code = randomRoom();
         chrome.storage.local.set({ roomCode: code });
         data.roomCode = code;
       }
-      resolve(data);
+      // Server URL is always the cloud — never read from storage
+      resolve({ serverUrl: DEFAULT_SERVER, roomCode: data.roomCode });
     });
   });
 }
@@ -30,12 +30,11 @@ async function init() {
   const fillBtn     = document.getElementById('fill-btn');
 
   // Populate settings panel
-  document.getElementById('input-server').value = serverUrl;
-  document.getElementById('input-room').value   = roomCode;
+  document.getElementById('input-room').value = roomCode;
   updatePhoneUrl(serverUrl, roomCode);
 
   try {
-    const res  = await fetch(`${serverUrl}/api/latest?room=${roomCode}`, { signal: AbortSignal.timeout(3000) });
+    const res  = await fetch(`${serverUrl}/api/latest?room=${roomCode}`, { signal: AbortSignal.timeout(15000) });
     const data = await res.json();
 
     dot.classList.remove('pulse');
@@ -239,26 +238,19 @@ document.getElementById('setup-btn').addEventListener('click', () => {
 });
 
 document.getElementById('save-btn').addEventListener('click', () => {
-  const serverUrl = document.getElementById('input-server').value.trim().replace(/\/$/, '');
-  const roomCode  = document.getElementById('input-room').value.trim().toUpperCase() || randomRoom();
-  chrome.storage.local.set({ serverUrl, roomCode }, () => {
+  const roomCode = document.getElementById('input-room').value.trim().toUpperCase() || randomRoom();
+  chrome.storage.local.set({ roomCode }, () => {
     document.getElementById('input-room').value = roomCode;
-    updatePhoneUrl(serverUrl, roomCode);
+    updatePhoneUrl(DEFAULT_SERVER, roomCode);
     document.getElementById('save-btn').textContent = '✓ Saved!';
     setTimeout(() => { document.getElementById('save-btn').textContent = 'Save'; }, 1500);
-    init(); // refresh status
+    init();
   });
 });
 
-document.getElementById('input-server').addEventListener('input', () => {
-  const s = document.getElementById('input-server').value.trim();
-  const r = document.getElementById('input-room').value.trim().toUpperCase();
-  updatePhoneUrl(s, r);
-});
 document.getElementById('input-room').addEventListener('input', () => {
-  const s = document.getElementById('input-server').value.trim();
   const r = document.getElementById('input-room').value.trim().toUpperCase();
-  updatePhoneUrl(s, r);
+  updatePhoneUrl(DEFAULT_SERVER, r);
 });
 
 document.getElementById('copy-link').addEventListener('click', () => {
