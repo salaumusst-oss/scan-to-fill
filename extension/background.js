@@ -30,15 +30,17 @@ async function checkServer() {
   }
 }
 
-// ── Heartbeat: keeps this laptop's "online" status alive on the server ─────────
+// ── Heartbeat: registers + keeps this laptop "online" on the server ────────────
+// We call /api/connect (not /api/heartbeat) so the laptop is re-registered
+// automatically after a server restart, and the website always shows it.
 async function sendHeartbeat() {
   const { roomCode, sessionId } = await getSettings();
   if (!roomCode || !sessionId) return;
   try {
-    await fetch(`${DEFAULT_SERVER}/api/heartbeat`, {
+    await fetch(`${DEFAULT_SERVER}/api/connect`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room: roomCode, session: sessionId, type: 'laptop' }),
+      body: JSON.stringify({ room: roomCode, session: sessionId, type: 'laptop', name: 'Laptop' }),
       signal: AbortSignal.timeout(10000)
     });
   } catch { /* ignore — will retry on next tick */ }
