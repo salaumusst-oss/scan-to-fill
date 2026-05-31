@@ -11,11 +11,46 @@
       color: #e8e8f0;
       padding: 16px;
     }
+
+    /* ── Setup screen ── */
+    #screen-setup { text-align: center; padding: 8px 0 4px; }
+    .setup-icon  { font-size: 44px; margin-bottom: 10px; }
+    .setup-title { font-size: 17px; font-weight: 900; color: #7eb8f7; margin-bottom: 8px; }
+    .setup-hint  { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 20px; }
+    .setup-input {
+      display: block; width: 100%; padding: 13px 14px;
+      background: #1a1a2e; border: 1.5px solid #2a2a45;
+      border-radius: 11px; color: #e8e8f0;
+      font-size: 20px; font-weight: 900; letter-spacing: 6px;
+      text-align: center; font-family: monospace;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+    .setup-input:focus { outline: none; border-color: #7eb8f7; }
+    .setup-input::placeholder { color: #333; letter-spacing: 3px; font-weight: 400; }
+    .setup-error {
+      font-size: 11px; color: #f87171; margin-top: 10px;
+      min-height: 16px; line-height: 1.5;
+    }
+    .setup-footer { font-size: 11px; color: #444; margin-top: 14px; }
+    .setup-gen-link {
+      font-size: 11px; color: #7eb8f7; cursor: pointer;
+      text-decoration: underline; display: block; margin-top: 8px;
+    }
+
+    /* ── Main screen ── */
+    #screen-main { display: none; }
+
     header {
       display: flex; align-items: center;
       justify-content: space-between; margin-bottom: 14px;
     }
     h2 { font-size: 15px; font-weight: 800; color: #7eb8f7; }
+    .room-chip {
+      font-size: 11px; font-weight: 800; color: #7eb8f7;
+      background: #1a1a2e; border: 1px solid #2a2a45;
+      padding: 3px 9px; border-radius: 100px;
+      letter-spacing: 1.5px; font-family: monospace;
+    }
 
     .status-pill {
       display: flex; align-items: center; gap: 7px;
@@ -64,8 +99,8 @@
     .setting-row input {
       width: 100%; padding: 8px 10px;
       background: #1a1a2e; border: 1px solid #2a2a45;
-      border-radius: 8px; color: #e8e8f0; font-size: 12px;
-      font-family: monospace;
+      border-radius: 8px; color: #e8e8f0; font-size: 13px;
+      font-family: monospace; letter-spacing: 2px; text-transform: uppercase;
     }
     .setting-row input:focus { outline: none; border-color: #7eb8f7; }
     .save-btn {
@@ -82,36 +117,56 @@
     }
     .phone-url-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
     .copy-link { font-size: 11px; color: #7eb8f7; cursor: pointer; text-decoration: underline; margin-top: 4px; display: inline-block; }
+    .disconnect-link { font-size: 11px; color: #f87171; cursor: pointer; text-decoration: underline; margin-top: 8px; display: block; }
   </style>
 </head>
 <body>
-  <header>
-    <h2>📄 Scan to Fill</h2>
-  </header>
 
-  <div class="status-pill">
-    <div class="dot pulse" id="dot"></div>
-    <span class="status-text" id="status-text">Connecting…</span>
+  <!-- ── Setup screen (shown on first use / no room code) ── -->
+  <div id="screen-setup">
+    <div class="setup-icon">📄</div>
+    <h2 class="setup-title">Scan to Fill</h2>
+    <p class="setup-hint">Enter the 4-letter room code from the website to connect this laptop.</p>
+    <input id="setup-room-input" class="setup-input" type="text" maxlength="6" placeholder="ABCD" autocomplete="off" spellcheck="false">
+    <button class="btn btn-fill" id="setup-connect-btn">Connect →</button>
+    <p class="setup-error" id="setup-error"></p>
+    <span class="setup-gen-link" id="setup-gen-link">Generate a random code instead</span>
+    <p class="setup-footer">Get a code at scan-to-fill.onrender.com</p>
   </div>
 
-  <div id="fields-section"></div>
+  <!-- ── Main screen ── -->
+  <div id="screen-main">
+    <header>
+      <h2>📄 Scan to Fill</h2>
+      <span class="room-chip" id="room-chip">—</span>
+    </header>
 
-  <button class="btn btn-fill"  id="fill-btn"  style="display:none">↩ Fill Page Now</button>
-  <button class="btn btn-clear" id="clear-btn">✕ Clear Form</button>
-  <button class="btn btn-setup" id="setup-btn">⚙️ Settings</button>
-
-  <!-- Settings panel (hidden until ⚙️ is clicked) -->
-  <div id="settings-panel">
-    <div class="setting-row" style="margin-top:12px">
-      <label>Your Room Code</label>
-      <input id="input-room" type="text" maxlength="8" placeholder="e.g. A1B2">
+    <div class="status-pill">
+      <div class="dot pulse" id="dot"></div>
+      <span class="status-text" id="status-text">Connecting…</span>
     </div>
-    <button class="save-btn" id="save-btn">Save</button>
 
-    <div style="margin-top:12px">
-      <div class="phone-url-label">Phone URL for your room</div>
-      <div class="phone-url" id="phone-url-display">—</div>
-      <span class="copy-link" id="copy-link">Copy link</span>
+    <div id="fields-section"></div>
+
+    <button class="btn btn-fill"  id="fill-btn"  style="display:none">↩ Fill Page Now</button>
+    <button class="btn btn-clear" id="clear-btn">✕ Clear Form</button>
+    <button class="btn btn-setup" id="setup-btn">⚙️ Settings</button>
+
+    <!-- Settings panel (hidden until ⚙️ is clicked) -->
+    <div id="settings-panel">
+      <div class="setting-row" style="margin-top:12px">
+        <label>Room Code</label>
+        <input id="input-room" type="text" maxlength="8" placeholder="ABCD">
+      </div>
+      <button class="save-btn" id="save-btn">Save & Reconnect</button>
+
+      <div style="margin-top:12px">
+        <div class="phone-url-label">Phone URL for your room</div>
+        <div class="phone-url" id="phone-url-display">—</div>
+        <span class="copy-link" id="copy-link">Copy link</span>
+      </div>
+
+      <span class="disconnect-link" id="disconnect-link">✕ Disconnect from this room</span>
     </div>
   </div>
 

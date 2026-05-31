@@ -63,33 +63,114 @@
     .status.err  { color: #f87171; }
     .status.info { color: #7eb8f7; }
     #capture-input { display: none; }
+
+    /* Error screen */
+    #screen-error { display: none; }
+    .error-card {
+      background: #1a1a2e;
+      border: 1px solid #3a2020;
+      border-radius: 16px;
+      padding: 32px 24px;
+      max-width: 320px;
+      width: 100%;
+    }
+    .error-card h2 { font-size: 18px; color: #f87171; margin-bottom: 10px; }
+    .error-card p  { font-size: 14px; color: #888; line-height: 1.6; }
   </style>
 </head>
 <body>
-  <div class="logo">📄</div>
-  <h1>NCNMO Scanner</h1>
-  <p class="sub">Scan a patient form — it will appear on the laptop</p>
-  <div class="room-badge" id="room-label">Room: …</div>
 
-  <img id="preview" alt="preview">
-  <input id="capture-input" type="file" accept="image/*" capture="environment">
+  <!-- ── Scan screen ── -->
+  <div id="screen-scan">
+    <div class="logo">📄</div>
+    <h1>NCNMO Scanner</h1>
+    <p class="sub">Scan a patient form — it will appear on the laptop</p>
+    <div class="room-badge" id="room-label">Room: …</div>
 
-  <button class="btn btn-blue" id="main-btn">📷  Take Photo</button>
-  <button class="btn btn-gray" id="retake-btn" style="display:none">Retake</button>
+    <img id="preview" alt="preview">
+    <input id="capture-input" type="file" accept="image/*" capture="environment">
 
-  <div class="status" id="status"></div>
+    <button class="btn btn-blue" id="main-btn">📷  Take Photo</button>
+    <button class="btn btn-gray" id="retake-btn" style="display:none">Retake</button>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- ── Error screen (shown if room is taken by another phone) ── -->
+  <div id="screen-error">
+    <div class="error-card">
+      <h2>⚠ Room in Use</h2>
+      <p id="error-msg">This room code is already connected to another phone.</p>
+    </div>
+  </div>
 
   <script>
     // Room code comes from the URL: /mobile.html?room=XXXX
-    const params  = new URLSearchParams(location.search);
-    const room    = (params.get('room') || 'DEFAULT').toUpperCase();
+    const params = new URLSearchParams(location.search);
+    const room   = (params.get('room') || 'DEFAULT').toUpperCase();
     document.getElementById('room-label').textContent = 'Room: ' + room;
 
-    const input    = document.getElementById('capture-input');
-    const mainBtn  = document.getElementById('main-btn');
+    // Phone session ID — persisted in localStorage so reconnects are recognized
+    function getOrCreatePhoneSession() {
+      let id = localStorage.getItem('stf-phone-session-' + room);
+      if (!id) {
+        id = Math.random().toString(36).substr(2, 12);
+        localStorage.setItem('stf-phone-session-' + room, id);
+      }
+      return id;
+    }
+
+    const sessionId = getOrCreatePhoneSession();
+
+    // Connect this phone to the room
+    async function connectPhone() {
+      try {
+        const ua   = navigator.userAgent;
+        let name = 'Phone';
+        if (/iPhone/i.test(ua))   name = 'iPhone';
+        else if (/iPad/i.test(ua)) name = 'iPad';
+        else if (/Android/i.test(ua)) name = 'Android phone';
+
+        const res  = await fetch('/api/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, session: sessionId, type: 'phone', name })
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          // Another phone is already connected to this room
+          document.getElementById('screen-scan').style.display  = 'none';
+          document.getElementById('screen-error').style.display = 'flex';
+          document.getElementById('error-msg').textContent =
+            `This room code (${room}) is already connected to another phone (${data.takenBy}). ` +
+            'Ask for a different room code, or wait for the other phone to disconnect.';
+        }
+      } catch {
+        // Network error on connect — not fatal, let them scan anyway
+      }
+    }
+
+    // Heartbeat — keep this phone "online" every 60 s
+    function startHeartbeat() {
+      setInterval(async () => {
+        try {
+          await fetch('/api/heartbeat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ room, session: sessionId, type: 'phone' })
+          });
+        } catch {}
+      }, 60000);
+    }
+
+    connectPhone().then(startHeartbeat);
+
+    // ── Camera / upload ──────────────────────────────────────────────────────
+    const input     = document.getElementById('capture-input');
+    const mainBtn   = document.getElementById('main-btn');
     const retakeBtn = document.getElementById('retake-btn');
-    const preview  = document.getElementById('preview');
-    const status   = document.getElementById('status');
+    const preview   = document.getElementById('preview');
+    const status    = document.getElementById('status');
 
     mainBtn.addEventListener('click', capture);
     retakeBtn.addEventListener('click', capture);
@@ -108,7 +189,7 @@
       retakeBtn.style.display = 'block';
 
       setStatus('Uploading & reading text…', 'info');
-      mainBtn.disabled = true;
+      mainBtn.disabled    = true;
       mainBtn.textContent = '⏳  Processing…';
 
       let blob = file;
@@ -116,7 +197,7 @@
 
       const form = new FormData();
       form.append('image', blob, 'scan.jpg');
-      form.append('room', room);   // ← tells the server which room to store this under
+      form.append('room',  room);
 
       try {
         const res  = await fetch('/api/upload', { method: 'POST', body: form });
@@ -148,8 +229,8 @@
     }
 
     function setStatus(msg, type) {
-      status.textContent  = msg;
-      status.className = 'status ' + type;
+      status.textContent = msg;
+      status.className   = 'status ' + type;
     }
   </script>
 </body>

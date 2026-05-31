@@ -1,40 +1,65 @@
-// ── Defaults ──────────────────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────────
 const DEFAULT_SERVER = 'https://scan-to-fill.onrender.com';
 
+// 4 random uppercase letters (skip I and O to avoid confusion)
 function randomRoom() {
-  return Math.random().toString(36).substr(2, 4).toUpperCase();
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  return Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
 }
 
-// ── Load saved settings (server URL + room code) ──────────────────────────────
-async function getSettings() {
+function esc(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── Session ID: generated once per extension install, never changes ────────────
+async function getOrCreateSession() {
   return new Promise(resolve => {
-    chrome.storage.local.get({ roomCode: '' }, data => {
-      if (!data.roomCode) {
-        const code = randomRoom();
-        chrome.storage.local.set({ roomCode: code });
-        data.roomCode = code;
-      }
-      // Server URL is always the cloud — never read from storage
-      resolve({ serverUrl: DEFAULT_SERVER, roomCode: data.roomCode });
+    chrome.storage.local.get({ sessionId: '' }, data => {
+      if (data.sessionId) return resolve(data.sessionId);
+      const id = Math.random().toString(36).substr(2, 12);
+      chrome.storage.local.set({ sessionId: id });
+      resolve(id);
     });
   });
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-async function init() {
-  const { serverUrl, roomCode } = await getSettings();
+// ── Connect this laptop to a room (called from setup screen + save button) ────
+async function connectToRoom(roomCode, sessionId) {
+  const res  = await fetch(`${DEFAULT_SERVER}/api/connect`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ room: roomCode, session: sessionId, type: 'laptop', name: 'Laptop' }),
+    signal: AbortSignal.timeout(15000)
+  });
+  return res.json();
+}
 
-  const dot         = document.getElementById('dot');
-  const statusText  = document.getElementById('status-text');
+// ── Screens ────────────────────────────────────────────────────────────────────
+function showSetup() {
+  document.getElementById('screen-setup').style.display = 'block';
+  document.getElementById('screen-main').style.display  = 'none';
+}
+
+function showMain() {
+  document.getElementById('screen-setup').style.display = 'none';
+  document.getElementById('screen-main').style.display  = 'block';
+}
+
+// ── Load the main screen for a connected room ──────────────────────────────────
+async function loadMain(roomCode) {
+  showMain();
+
+  document.getElementById('room-chip').textContent    = roomCode;
+  document.getElementById('input-room').value         = roomCode;
+  updatePhoneUrl(DEFAULT_SERVER, roomCode);
+
+  const dot          = document.getElementById('dot');
+  const statusText   = document.getElementById('status-text');
   const fieldsSection = document.getElementById('fields-section');
-  const fillBtn     = document.getElementById('fill-btn');
-
-  // Populate settings panel
-  document.getElementById('input-room').value = roomCode;
-  updatePhoneUrl(serverUrl, roomCode);
+  const fillBtn      = document.getElementById('fill-btn');
 
   try {
-    const res  = await fetch(`${serverUrl}/api/latest?room=${roomCode}`, { signal: AbortSignal.timeout(15000) });
+    const res  = await fetch(`${DEFAULT_SERVER}/api/latest?room=${roomCode}`, { signal: AbortSignal.timeout(15000) });
     const data = await res.json();
 
     dot.classList.remove('pulse');
@@ -61,15 +86,141 @@ async function init() {
   } catch {
     dot.classList.remove('pulse');
     statusText.textContent = 'Server not running';
-    fieldsSection.innerHTML = `<p class="empty" style="color:#f87171">Start the server, or check Settings.</p>`;
+    fieldsSection.innerHTML = `<p class="empty" style="color:#f87171">Could not reach server.</p>`;
   }
 }
 
-// ── Fill page ─────────────────────────────────────────────────────────────────
+// ── Init ───────────────────────────────────────────────────────────────────────
+async function init() {
+  const sessionId = await getOrCreateSession();
+
+  chrome.storage.local.get({ roomCode: '' }, async data => {
+    if (!data.roomCode) {
+      // First time — show setup screen
+      showSetup();
+    } else {
+      await loadMain(data.roomCode);
+    }
+  });
+
+  // ── Setup screen events ──────────────────────────────────────────────────────
+  document.getElementById('setup-room-input').addEventListener('input', function () {
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+
+  document.getElementById('setup-gen-link').addEventListener('click', () => {
+    document.getElementById('setup-room-input').value = randomRoom();
+    document.getElementById('setup-error').textContent = '';
+  });
+
+  document.getElementById('setup-connect-btn').addEventListener('click', async () => {
+    const code  = document.getElementById('setup-room-input').value.trim().toUpperCase();
+    const errEl = document.getElementById('setup-error');
+    const btn   = document.getElementById('setup-connect-btn');
+
+    if (!code) { errEl.textContent = 'Please enter a room code.'; return; }
+
+    btn.disabled    = true;
+    btn.textContent = 'Connecting…';
+    errEl.textContent = '';
+
+    try {
+      const result = await connectToRoom(code, sessionId);
+      if (result.ok) {
+        chrome.storage.local.set({ roomCode: code });
+        await loadMain(code);
+      } else {
+        errEl.textContent = `Room ${code} is already in use by another laptop (${result.takenBy}). Try a different code.`;
+        btn.disabled    = false;
+        btn.textContent = 'Connect →';
+      }
+    } catch {
+      errEl.textContent = 'Could not reach the server. Try again.';
+      btn.disabled    = false;
+      btn.textContent = 'Connect →';
+    }
+  });
+
+  document.getElementById('setup-room-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('setup-connect-btn').click();
+  });
+
+  // ── Settings panel ───────────────────────────────────────────────────────────
+  document.getElementById('setup-btn').addEventListener('click', () => {
+    const panel = document.getElementById('settings-panel');
+    panel.classList.toggle('open');
+    document.getElementById('setup-btn').textContent =
+      panel.classList.contains('open') ? '▲ Hide Settings' : '⚙️ Settings';
+  });
+
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    const code = document.getElementById('input-room').value.trim().toUpperCase() || randomRoom();
+    const btn  = document.getElementById('save-btn');
+    const errEl = document.getElementById('setup-error'); // reuse if needed
+
+    btn.disabled    = true;
+    btn.textContent = 'Connecting…';
+
+    try {
+      const result = await connectToRoom(code, sessionId);
+      if (result.ok) {
+        chrome.storage.local.set({ roomCode: code });
+        btn.textContent = '✓ Saved!';
+        setTimeout(() => { btn.textContent = 'Save & Reconnect'; btn.disabled = false; }, 1500);
+        await loadMain(code);
+      } else {
+        btn.textContent = 'Room Taken';
+        btn.disabled    = false;
+        alert(`Room ${code} is already in use by another laptop (${result.takenBy}).`);
+      }
+    } catch {
+      btn.textContent = 'Error — retry';
+      btn.disabled    = false;
+    }
+  });
+
+  document.getElementById('input-room').addEventListener('input', function () {
+    this.value = this.value.toUpperCase();
+    updatePhoneUrl(DEFAULT_SERVER, this.value.trim());
+  });
+
+  document.getElementById('copy-link').addEventListener('click', () => {
+    const url = document.getElementById('phone-url-display').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+      document.getElementById('copy-link').textContent = '✓ Copied!';
+      setTimeout(() => { document.getElementById('copy-link').textContent = 'Copy link'; }, 1500);
+    });
+  });
+
+  document.getElementById('disconnect-link').addEventListener('click', () => {
+    if (confirm('Disconnect from this room? You will need to enter a room code again.')) {
+      chrome.storage.local.remove('roomCode');
+      document.getElementById('settings-panel').classList.remove('open');
+      document.getElementById('setup-btn').textContent = '⚙️ Settings';
+      document.getElementById('setup-room-input').value = '';
+      document.getElementById('setup-error').textContent = '';
+      showSetup();
+    }
+  });
+
+  // ── Fill / Clear ─────────────────────────────────────────────────────────────
+  document.getElementById('fill-btn').addEventListener('click', fillPage);
+  document.getElementById('clear-btn').addEventListener('click', clearPage);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function updatePhoneUrl(serverUrl, roomCode) {
+  const url = `${serverUrl}/mobile.html?room=${roomCode}`;
+  document.getElementById('phone-url-display').textContent = url;
+}
+
+// ── Fill page ──────────────────────────────────────────────────────────────────
 async function fillPage() {
-  const { serverUrl, roomCode } = await getSettings();
+  const roomCode = await new Promise(r => chrome.storage.local.get({ roomCode: '' }, d => r(d.roomCode)));
+  if (!roomCode) return;
+
   try {
-    const res  = await fetch(`${serverUrl}/api/latest?room=${roomCode}`);
+    const res  = await fetch(`${DEFAULT_SERVER}/api/latest?room=${roomCode}`);
     const data = await res.json();
     if (!data.fields) { alert('No scan data. Scan a form first.'); return; }
 
@@ -113,7 +264,6 @@ async function fillPage() {
           return null;
         }
 
-        // Text inputs
         for (const [name, value] of [
           ['first_name', fields['First Name']], ['last_name', fields['Last Name']],
           ['phone_number', fields['Patient Phone No.']], ['address', fields['Address']],
@@ -125,20 +275,17 @@ async function fillPage() {
           if (el) { setInput(el, value); filled++; }
         }
 
-        // Dropdowns
         for (const [label, value] of [['Gender', fields['Gender (Sex)']], ['Marital Status', fields['Marital Status']]]) {
           if (!value) continue;
           const s = findSelectByLabel(label);
           if (s && setSelect(s, value)) filled++;
         }
 
-        // Hardcoded: State = Kwara, Location = Ilorin
         const stateS = findSelectByLabel('State');
         if (stateS && setSelect(stateS, 'Kwara')) filled++;
         const locS = findSelectByLabel('Location');
         if (locS && setSelect(locS, 'Ilorin')) filled++;
 
-        // Date of Birth
         let yr = null, mo = 0, dy = 1;
         if (fields['Date of Birth']) {
           const d = new Date(fields['Date of Birth']);
@@ -170,7 +317,6 @@ async function fillPage() {
           }
         }
 
-        // Toast
         document.getElementById('stf-toast')?.remove();
         const t = document.createElement('div');
         t.id = 'stf-toast';
@@ -196,7 +342,7 @@ async function fillPage() {
   }
 }
 
-// ── Clear form ────────────────────────────────────────────────────────────────
+// ── Clear page ─────────────────────────────────────────────────────────────────
 async function clearPage() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
@@ -222,52 +368,6 @@ async function clearPage() {
     });
   } catch(e) { alert('Clear error: ' + e.message); }
   window.close();
-}
-
-// ── Settings panel ────────────────────────────────────────────────────────────
-function updatePhoneUrl(serverUrl, roomCode) {
-  const url = `${serverUrl}/mobile.html?room=${roomCode}`;
-  document.getElementById('phone-url-display').textContent = url;
-}
-
-document.getElementById('setup-btn').addEventListener('click', () => {
-  const panel = document.getElementById('settings-panel');
-  panel.classList.toggle('open');
-  document.getElementById('setup-btn').textContent =
-    panel.classList.contains('open') ? '▲ Hide Settings' : '⚙️ Settings';
-});
-
-document.getElementById('save-btn').addEventListener('click', () => {
-  const roomCode = document.getElementById('input-room').value.trim().toUpperCase() || randomRoom();
-  chrome.storage.local.set({ roomCode }, () => {
-    document.getElementById('input-room').value = roomCode;
-    updatePhoneUrl(DEFAULT_SERVER, roomCode);
-    document.getElementById('save-btn').textContent = '✓ Saved!';
-    setTimeout(() => { document.getElementById('save-btn').textContent = 'Save'; }, 1500);
-    init();
-  });
-});
-
-document.getElementById('input-room').addEventListener('input', () => {
-  const r = document.getElementById('input-room').value.trim().toUpperCase();
-  updatePhoneUrl(DEFAULT_SERVER, r);
-});
-
-document.getElementById('copy-link').addEventListener('click', () => {
-  const url = document.getElementById('phone-url-display').textContent;
-  navigator.clipboard.writeText(url).then(() => {
-    document.getElementById('copy-link').textContent = '✓ Copied!';
-    setTimeout(() => { document.getElementById('copy-link').textContent = 'Copy link'; }, 1500);
-  });
-});
-
-// ── Wire up buttons ───────────────────────────────────────────────────────────
-document.getElementById('fill-btn').addEventListener('click', fillPage);
-document.getElementById('clear-btn').addEventListener('click', clearPage);
-
-function openSetup() {}   // kept for any leftover references
-function esc(s) {
-  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 init();
