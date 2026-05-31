@@ -1,6 +1,7 @@
-const express = require('express');
-const multer  = require('multer');
+const express  = require('express');
+const multer   = require('multer');
 const Anthropic = require('@anthropic-ai/sdk');
+const archiver = require('archiver');
 const os   = require('os');
 const path = require('path');
 
@@ -48,6 +49,17 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     console.error(`[${room}] AI error:`, err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── GET /download/extension — streams a zip of the Chrome extension ───────────
+app.get('/download/extension', (req, res) => {
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename="scan-to-fill-extension.zip"');
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  archive.on('error', err => res.status(500).send(err.message));
+  archive.pipe(res);
+  archive.directory(path.join(__dirname, 'extension'), 'scan-to-fill-extension');
+  archive.finalize();
 });
 
 // ── GET /api/latest?room=XXXX ─────────────────────────────────────────────────

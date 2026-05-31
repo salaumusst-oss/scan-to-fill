@@ -3,252 +3,333 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scan to Fill — NCNMO Medical Scanner</title>
+  <title>Scan to Fill — NCNMO</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #0f0f1a;
       color: #e8e8f0;
       min-height: 100vh;
-    }
-
-    /* ── Nav ── */
-    nav {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 40px;
+      flex-direction: column;
+    }
+
+    /* ── Nav ───────────────────────────────────────────── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 32px;
       border-bottom: 1px solid #1a1a2e;
+      flex-shrink: 0;
     }
-    .nav-logo { font-size: 18px; font-weight: 800; color: #7eb8f7; }
-    .nav-status {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 13px; color: #555;
+    .nav-logo { font-size: 16px; font-weight: 800; color: #7eb8f7; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .dot-wrap  { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #444; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
+    .dot.ok { background: #4ade80; }
+    #logout-btn {
+      background: none; border: 1px solid #2a2a45; color: #555;
+      padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;
+      display: none;
     }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #f87171; }
-    .dot.ok { background: #4ade80; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    #logout-btn:hover { color: #e8e8f0; border-color: #555; }
 
-    /* ── Hero ── */
-    .hero {
-      text-align: center;
-      padding: 80px 24px 60px;
-      max-width: 700px;
-      margin: 0 auto;
+    /* ── Screens ───────────────────────────────────────── */
+    .screen {
+      flex: 1;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
     }
-    .hero-icon { font-size: 64px; margin-bottom: 20px; }
-    .hero h1 {
-      font-size: clamp(32px, 6vw, 52px);
-      font-weight: 900;
-      line-height: 1.1;
-      margin-bottom: 16px;
-      background: linear-gradient(135deg, #7eb8f7 0%, #a78bfa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero p {
-      font-size: 18px;
-      color: #888;
-      line-height: 1.6;
-      margin-bottom: 36px;
-    }
-    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .btn {
-      padding: 14px 28px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      transition: transform .15s, opacity .15s;
-    }
-    .btn:hover { transform: translateY(-2px); }
-    .btn-primary { background: #4ade80; color: #0f0f1a; }
-    .btn-secondary { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; }
+    .screen.active { display: flex; }
 
-    /* ── Steps ── */
-    .steps {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 24px 80px;
-    }
-    .steps h2 {
+    /* ── Login ─────────────────────────────────────────── */
+    .login-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 420px;
+      width: 100%;
       text-align: center;
-      font-size: 24px;
-      font-weight: 800;
-      color: #7eb8f7;
-      margin-bottom: 40px;
     }
-    .steps-grid {
+    .login-icon { font-size: 52px; margin-bottom: 16px; }
+    .login-card h1 { font-size: 26px; font-weight: 900; color: #7eb8f7; margin-bottom: 8px; }
+    .login-card p  { font-size: 14px; color: #555; margin-bottom: 32px; line-height: 1.6; }
+    .login-card input {
+      width: 100%; padding: 14px 16px;
+      background: #0f0f1a; border: 1px solid #2a2a45;
+      border-radius: 12px; color: #e8e8f0;
+      font-size: 17px; font-weight: 700;
+      text-align: center; margin-bottom: 14px;
+    }
+    .login-card input:focus { outline: none; border-color: #7eb8f7; }
+    .login-card input::placeholder { color: #333; font-weight: 400; }
+    .btn-green {
+      display: block; width: 100%; padding: 14px;
+      background: #4ade80; color: #0f0f1a;
+      border: none; border-radius: 12px;
+      font-size: 16px; font-weight: 800; cursor: pointer;
+    }
+    .btn-green:hover { background: #22c55e; }
+
+    /* ── Dashboard ─────────────────────────────────────── */
+    .dashboard {
+      max-width: 820px;
+      width: 100%;
+    }
+    .welcome {
+      font-size: 22px; font-weight: 900; color: #7eb8f7;
+      margin-bottom: 28px;
+    }
+    .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 20px;
     }
-    .step {
+    .card {
       background: #1a1a2e;
       border: 1px solid #2a2a45;
       border-radius: 16px;
-      padding: 28px 24px;
+      padding: 28px;
     }
-    .step-num {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: #7eb8f7;
-      color: #0f0f1a;
-      font-weight: 900;
-      font-size: 16px;
-      display: flex; align-items: center; justify-content: center;
+    .card-label {
+      font-size: 10px; font-weight: 800; color: #444;
+      text-transform: uppercase; letter-spacing: 1px;
       margin-bottom: 16px;
     }
-    .step h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
-    .step p  { font-size: 14px; color: #666; line-height: 1.6; }
 
-    /* ── Scanner launch ── */
-    .scanner-box {
-      max-width: 480px;
-      margin: 0 auto 80px;
-      padding: 0 24px;
-      text-align: center;
+    /* Room code card */
+    .room-display {
+      font-size: 36px; font-weight: 900; letter-spacing: 6px;
+      color: #e8e8f0; margin-bottom: 16px;
+      background: #0f0f1a; border-radius: 10px;
+      padding: 14px; text-align: center;
     }
-    .room-input-row {
-      display: flex;
-      gap: 10px;
+    .regen-btn {
+      width: 100%; padding: 10px;
+      background: none; border: 1px solid #2a2a45;
+      border-radius: 9px; color: #7eb8f7;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .regen-btn:hover { background: #2a2a45; }
+
+    /* QR code card */
+    .qr-wrap {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      display: inline-block;
       margin-bottom: 14px;
     }
-    .room-input-row input {
-      flex: 1;
-      padding: 12px 16px;
-      background: #1a1a2e;
-      border: 1px solid #2a2a45;
-      border-radius: 10px;
-      color: #e8e8f0;
-      font-size: 16px;
-      font-family: monospace;
-      font-weight: 800;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+    .qr-wrap img { display: block; width: 180px; height: 180px; }
+    .scanner-link {
+      font-size: 11px; color: #555; word-break: break-all; line-height: 1.5;
+      margin-bottom: 12px;
     }
-    .room-input-row input:focus { outline: none; border-color: #7eb8f7; }
-    .room-input-row input::placeholder { color: #333; letter-spacing: 0; font-weight: 400; }
-    #open-scanner {
-      padding: 13px 22px;
-      background: #4ade80;
-      color: #0f0f1a;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      white-space: nowrap;
+    .copy-btn {
+      width: 100%; padding: 10px;
+      background: none; border: 1px solid #2a2a45;
+      border-radius: 9px; color: #7eb8f7;
+      font-size: 13px; font-weight: 700; cursor: pointer;
     }
-    #open-scanner:hover { background: #22c55e; }
-    .scanner-hint { font-size: 13px; color: #444; }
+    .copy-btn:hover { background: #2a2a45; }
 
-    /* ── Footer ── */
-    footer {
-      border-top: 1px solid #1a1a2e;
-      padding: 24px;
-      text-align: center;
-      font-size: 13px;
-      color: #333;
+    /* Extension card */
+    .ext-download {
+      display: block; width: 100%; padding: 14px;
+      background: #4ade80; color: #0f0f1a;
+      border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 800;
+      text-decoration: none; text-align: center;
+      cursor: pointer; margin-bottom: 20px;
     }
-    footer a { color: #555; text-decoration: none; }
-    footer a:hover { color: #7eb8f7; }
+    .ext-download:hover { background: #22c55e; }
+    .steps-list {
+      list-style: none;
+      counter-reset: step;
+    }
+    .steps-list li {
+      counter-increment: step;
+      display: flex; gap: 10px; align-items: flex-start;
+      margin-bottom: 10px; font-size: 13px; color: #666; line-height: 1.5;
+    }
+    .steps-list li::before {
+      content: counter(step);
+      background: #2a2a45; color: #7eb8f7;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; flex-shrink: 0; margin-top: 1px;
+    }
+    .steps-list code {
+      background: #0f0f1a; padding: 2px 6px;
+      border-radius: 4px; font-size: 11px; color: #7eb8f7;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
 
-  <nav>
-    <div class="nav-logo">📄 Scan to Fill</div>
-    <div class="nav-status">
+<nav>
+  <div class="nav-logo">📄 Scan to Fill</div>
+  <div class="nav-right">
+    <div class="dot-wrap">
       <div class="dot" id="nav-dot"></div>
-      <span id="nav-status-text">Checking server…</span>
+      <span id="nav-status">—</span>
     </div>
-  </nav>
+    <button id="logout-btn" onclick="logout()">← Not you?</button>
+  </div>
+</nav>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero-icon">📄✨</div>
-    <h1>Scan a form.<br>Fill it instantly.</h1>
-    <p>Snap a photo of a patient intake form on your phone — AI reads the handwriting and fills the web form on your laptop automatically.</p>
-    <div class="hero-btns">
-      <a class="btn btn-primary" href="#scanner">Open Phone Scanner</a>
-      <a class="btn btn-secondary" href="https://github.com/salaumusst-oss/scan-to-fill" target="_blank">View on GitHub</a>
+<!-- ── Login screen ── -->
+<div class="screen active" id="screen-login">
+  <div class="login-card">
+    <div class="login-icon">📄</div>
+    <h1>Scan to Fill</h1>
+    <p>NCNMO Medical Mission patient form scanner.<br>Enter your name to get started.</p>
+    <input type="text" id="name-input" placeholder="Your name (e.g. Jane)" autocomplete="off">
+    <button class="btn-green" id="start-btn">Get Started →</button>
+  </div>
+</div>
+
+<!-- ── Dashboard screen ── -->
+<div class="screen" id="screen-dashboard">
+  <div class="dashboard">
+    <div class="welcome" id="welcome-text">Welcome!</div>
+    <div class="cards">
+
+      <!-- Room code -->
+      <div class="card">
+        <div class="card-label">Your Room Code</div>
+        <div class="room-display" id="room-display">—</div>
+        <button class="regen-btn" id="regen-btn">↻ Generate New Code</button>
+      </div>
+
+      <!-- QR code -->
+      <div class="card" style="text-align:center">
+        <div class="card-label">Phone Scanner — scan with your phone</div>
+        <div class="qr-wrap">
+          <img id="qr-img" src="" alt="QR Code">
+        </div>
+        <div class="scanner-link" id="scanner-link">—</div>
+        <button class="copy-btn" id="copy-btn">Copy phone link</button>
+      </div>
+
+      <!-- Extension setup -->
+      <div class="card">
+        <div class="card-label">Chrome Extension</div>
+        <a class="ext-download" href="/download/extension">⬇ Download Extension</a>
+        <ol class="steps-list">
+          <li>Download and <strong style="color:#e8e8f0">unzip</strong> the file above</li>
+          <li>Go to <code>chrome://extensions</code> in Chrome</li>
+          <li>Enable <strong style="color:#e8e8f0">Developer mode</strong> (top-right toggle)</li>
+          <li>Click <strong style="color:#e8e8f0">Load unpacked</strong> → select the unzipped folder</li>
+          <li>Open the extension → <strong style="color:#e8e8f0">⚙️ Settings</strong></li>
+          <li>Set Server URL to <code id="server-url-hint">—</code></li>
+          <li>Set Room Code to <code id="room-code-hint">—</code></li>
+        </ol>
+      </div>
+
     </div>
-  </section>
+  </div>
+</div>
 
-  <!-- How it works -->
-  <section class="steps">
-    <h2>How it works</h2>
-    <div class="steps-grid">
-      <div class="step">
-        <div class="step-num">1</div>
-        <h3>Install the extension</h3>
-        <p>Load the Chrome extension on your laptop. It connects to this server automatically.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <h3>Set your room code</h3>
-        <p>Open the extension → Settings. Pick a short code (e.g. "JANE"). Each person at your team gets their own code.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <h3>Open scanner on phone</h3>
-        <p>Enter your room code below and tap "Open Scanner". Bookmark that page on your phone.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <h3>Scan &amp; fill</h3>
-        <p>Take a photo of the patient form. AI reads it. Click "Fill Page Now" in the extension to fill the form.</p>
-      </div>
-    </div>
-  </section>
+<script>
+  const SERVER = window.location.origin;
 
-  <!-- Scanner launcher -->
-  <section class="scanner-box" id="scanner">
-    <h2 style="font-size:20px;font-weight:800;color:#7eb8f7;margin-bottom:20px;">Open the phone scanner</h2>
-    <div class="room-input-row">
-      <input id="room-code" type="text" maxlength="8" placeholder="Your room code (e.g. JANE)">
-      <button id="open-scanner">📷 Open</button>
-    </div>
-    <p class="scanner-hint">This opens the scanner page for your room. Open it on your phone.</p>
-  </section>
+  // ── Server health ────────────────────────────────────────
+  fetch('/api/latest').then(r => {
+    document.getElementById('nav-dot').classList.add('ok');
+    document.getElementById('nav-status').textContent = 'Server online';
+  }).catch(() => {
+    document.getElementById('nav-status').textContent = 'Server offline';
+  });
 
-  <footer>
-    Built for NCNMO Medical Mission &nbsp;·&nbsp;
-    <a href="https://github.com/salaumusst-oss/scan-to-fill" target="_blank">GitHub</a>
-    &nbsp;·&nbsp;
-    Powered by Claude AI
-  </footer>
+  // ── Room code helpers ────────────────────────────────────
+  function nameToRoom(name) {
+    return name.replace(/\s+/g, '').toUpperCase().slice(0, 6) || 'USER';
+  }
+  function randomSuffix() {
+    return Math.random().toString(36).substr(2, 2).toUpperCase();
+  }
+  function scannerUrl(room) {
+    return `${SERVER}/mobile.html?room=${encodeURIComponent(room)}`;
+  }
+  function qrSrc(url) {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}&margin=0`;
+  }
 
-  <script>
-    // Check server health
-    fetch('/api/latest')
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(() => {
-        document.getElementById('nav-dot').classList.add('ok');
-        document.getElementById('nav-status-text').textContent = 'Server online';
-      })
-      .catch(() => {
-        document.getElementById('nav-status-text').textContent = 'Server offline';
-      });
+  // ── Render dashboard ─────────────────────────────────────
+  function showDashboard(name, room) {
+    document.getElementById('screen-login').classList.remove('active');
+    document.getElementById('screen-dashboard').classList.add('active');
+    document.getElementById('logout-btn').style.display = 'block';
+    document.getElementById('welcome-text').textContent = `Welcome, ${name}! 👋`;
 
-    // Open scanner for room
-    document.getElementById('open-scanner').addEventListener('click', () => {
-      const code = document.getElementById('room-code').value.trim().toUpperCase();
-      if (!code) { document.getElementById('room-code').focus(); return; }
-      const url = `/mobile.html?room=${encodeURIComponent(code)}`;
-      window.open(url, '_blank');
+    updateRoom(room);
+  }
+
+  function updateRoom(room) {
+    const url = scannerUrl(room);
+    document.getElementById('room-display').textContent = room;
+    document.getElementById('room-code-hint').textContent = room;
+    document.getElementById('server-url-hint').textContent = SERVER;
+    document.getElementById('scanner-link').textContent = url;
+    document.getElementById('qr-img').src = qrSrc(url);
+
+    // Save to localStorage
+    const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
+    saved.room = room;
+    localStorage.setItem('stf-user', JSON.stringify(saved));
+  }
+
+  // ── Login ────────────────────────────────────────────────
+  function login(name) {
+    name = name.trim();
+    if (!name) return;
+    const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
+    const room  = saved.room || nameToRoom(name);
+    localStorage.setItem('stf-user', JSON.stringify({ name, room }));
+    showDashboard(name, room);
+  }
+
+  function logout() {
+    localStorage.removeItem('stf-user');
+    document.getElementById('screen-dashboard').classList.remove('active');
+    document.getElementById('screen-login').classList.add('active');
+    document.getElementById('logout-btn').style.display = 'none';
+    document.getElementById('name-input').value = '';
+  }
+
+  // ── Events ───────────────────────────────────────────────
+  document.getElementById('start-btn').addEventListener('click', () => {
+    login(document.getElementById('name-input').value);
+  });
+  document.getElementById('name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login(document.getElementById('name-input').value);
+  });
+
+  document.getElementById('regen-btn').addEventListener('click', () => {
+    const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
+    const base  = nameToRoom(saved.name || 'USER');
+    const newRoom = base.slice(0, 4) + randomSuffix();
+    updateRoom(newRoom);
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    const url = document.getElementById('scanner-link').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+      document.getElementById('copy-btn').textContent = '✓ Copied!';
+      setTimeout(() => { document.getElementById('copy-btn').textContent = 'Copy phone link'; }, 1500);
     });
+  });
 
-    // Also open on Enter
-    document.getElementById('room-code').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('open-scanner').click();
-    });
-  </script>
+  // ── Auto-login if returning user ─────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
+    if (saved.name) showDashboard(saved.name, saved.room || nameToRoom(saved.name));
+  });
+</script>
 </body>
 </html>
