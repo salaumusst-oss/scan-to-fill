@@ -80,6 +80,12 @@ function parseDevice(ua) {
   return 'Unknown device';
 }
 
+// ── GET /api/version ──────────────────────────────────────────────────────────
+// Bump this whenever a new extension build is pushed so installed extensions
+// know to re-download.
+const EXTENSION_VERSION = '1.2.0';
+app.get('/api/version', (req, res) => res.json({ version: EXTENSION_VERSION }));
+
 // ── GET /api/user-room?name=NAME ──────────────────────────────────────────────
 // Returns (and creates if new) a persistent room code for this person.
 app.get('/api/user-room', (req, res) => {

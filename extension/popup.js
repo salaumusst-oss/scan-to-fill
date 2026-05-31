@@ -45,9 +45,22 @@ function showMain() {
   document.getElementById('screen-main').style.display  = 'block';
 }
 
+// ── Update check ───────────────────────────────────────────────────────────────
+async function checkForUpdate() {
+  try {
+    const res        = await fetch(`${DEFAULT_SERVER}/api/version`, { signal: AbortSignal.timeout(8000) });
+    const { version} = await res.json();
+    const mine       = chrome.runtime.getManifest().version;
+    if (version !== mine) {
+      document.getElementById('update-banner').style.display = 'block';
+    }
+  } catch { /* silent — don't block the UI */ }
+}
+
 // ── Load the main screen for a connected room ──────────────────────────────────
 async function loadMain(roomCode) {
   showMain();
+  checkForUpdate(); // non-blocking
 
   document.getElementById('room-chip').textContent    = roomCode;
   document.getElementById('input-room').value         = roomCode;

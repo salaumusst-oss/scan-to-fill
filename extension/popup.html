@@ -118,6 +118,18 @@
     .phone-url-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
     .copy-link { font-size: 11px; color: #7eb8f7; cursor: pointer; text-decoration: underline; margin-top: 4px; display: inline-block; }
     .disconnect-link { font-size: 11px; color: #f87171; cursor: pointer; text-decoration: underline; margin-top: 8px; display: block; }
+
+    /* ── Update banner ── */
+    #update-banner {
+      display: none;
+      background: #2a1a00; border: 1px solid #fbbf24;
+      border-radius: 10px; padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 12px; color: #fbbf24; line-height: 1.5;
+    }
+    #update-banner a {
+      color: #fbbf24; font-weight: 800; text-decoration: underline; cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -136,6 +148,13 @@
 
   <!-- ── Main screen ── -->
   <div id="screen-main">
+
+    <!-- Update available banner -->
+    <div id="update-banner">
+      ⚠ A new version is available.<br>
+      <a id="update-link" href="https://scan-to-fill.onrender.com" target="_blank">Re-download the extension →</a>
+    </div>
+
     <header>
       <h2>📄 Scan to Fill</h2>
       <span class="room-chip" id="room-chip">—</span>
