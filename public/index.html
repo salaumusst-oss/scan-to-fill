@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan to Fill — NCNMO Medical Scanner</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 40px;
+      border-bottom: 1px solid #1a1a2e;
+    }
+    .nav-logo { font-size: 18px; font-weight: 800; color: #7eb8f7; }
+    .nav-status {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: #555;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #f87171; }
+    .dot.ok { background: #4ade80; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 80px 24px 60px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .hero-icon { font-size: 64px; margin-bottom: 20px; }
+    .hero h1 {
+      font-size: clamp(32px, 6vw, 52px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #7eb8f7 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px;
+      color: #888;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: transform .15s, opacity .15s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: #4ade80; color: #0f0f1a; }
+    .btn-secondary { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; }
+
+    /* ── Steps ── */
+    .steps {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+    .steps h2 {
+      text-align: center;
+      font-size: 24px;
+      font-weight: 800;
+      color: #7eb8f7;
+      margin-bottom: 40px;
+    }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .step {
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 16px;
+      padding: 28px 24px;
+    }
+    .step-num {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #7eb8f7;
+      color: #0f0f1a;
+      font-weight: 900;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+    .step h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+    .step p  { font-size: 14px; color: #666; line-height: 1.6; }
+
+    /* ── Scanner launch ── */
+    .scanner-box {
+      max-width: 480px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .room-input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .room-input-row input {
+      flex: 1;
+      padding: 12px 16px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 10px;
+      color: #e8e8f0;
+      font-size: 16px;
+      font-family: monospace;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .room-input-row input:focus { outline: none; border-color: #7eb8f7; }
+    .room-input-row input::placeholder { color: #333; letter-spacing: 0; font-weight: 400; }
+    #open-scanner {
+      padding: 13px 22px;
+      background: #4ade80;
+      color: #0f0f1a;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #open-scanner:hover { background: #22c55e; }
+    .scanner-hint { font-size: 13px; color: #444; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid #1a1a2e;
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #333;
+    }
+    footer a { color: #555; text-decoration: none; }
+    footer a:hover { color: #7eb8f7; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-logo">📄 Scan to Fill</div>
+    <div class="nav-status">
+      <div class="dot" id="nav-dot"></div>
+      <span id="nav-status-text">Checking server…</span>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-icon">📄✨</div>
+    <h1>Scan a form.<br>Fill it instantly.</h1>
+    <p>Snap a photo of a patient intake form on your phone — AI reads the handwriting and fills the web form on your laptop automatically.</p>
+    <div class="hero-btns">
+      <a class="btn btn-primary" href="#scanner">Open Phone Scanner</a>
+      <a class="btn btn-secondary" href="https://github.com/salaumusst-oss/scan-to-fill" target="_blank">View on GitHub</a>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="steps">
+    <h2>How it works</h2>
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Install the extension</h3>
+        <p>Load the Chrome extension on your laptop. It connects to this server automatically.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Set your room code</h3>
+        <p>Open the extension → Settings. Pick a short code (e.g. "JANE"). Each person at your team gets their own code.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Open scanner on phone</h3>
+        <p>Enter your room code below and tap "Open Scanner". Bookmark that page on your phone.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3>Scan &amp; fill</h3>
+        <p>Take a photo of the patient form. AI reads it. Click "Fill Page Now" in the extension to fill the form.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scanner launcher -->
+  <section class="scanner-box" id="scanner">
+    <h2 style="font-size:20px;font-weight:800;color:#7eb8f7;margin-bottom:20px;">Open the phone scanner</h2>
+    <div class="room-input-row">
+      <input id="room-code" type="text" maxlength="8" placeholder="Your room code (e.g. JANE)">
+      <button id="open-scanner">📷 Open</button>
+    </div>
+    <p class="scanner-hint">This opens the scanner page for your room. Open it on your phone.</p>
+  </section>
+
+  <footer>
+    Built for NCNMO Medical Mission &nbsp;·&nbsp;
+    <a href="https://github.com/salaumusst-oss/scan-to-fill" target="_blank">GitHub</a>
+    &nbsp;·&nbsp;
+    Powered by Claude AI
+  </footer>
+
+  <script>
+    // Check server health
+    fetch('/api/latest')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(() => {
+        document.getElementById('nav-dot').classList.add('ok');
+        document.getElementById('nav-status-text').textContent = 'Server online';
+      })
+      .catch(() => {
+        document.getElementById('nav-status-text').textContent = 'Server offline';
+      });
+
+    // Open scanner for room
+    document.getElementById('open-scanner').addEventListener('click', () => {
+      const code = document.getElementById('room-code').value.trim().toUpperCase();
+      if (!code) { document.getElementById('room-code').focus(); return; }
+      const url = `/mobile.html?room=${encodeURIComponent(code)}`;
+      window.open(url, '_blank');
+    });
+
+    // Also open on Enter
+    document.getElementById('room-code').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('open-scanner').click();
+    });
+  </script>
+</body>
+</html>
