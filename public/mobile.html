@@ -165,6 +165,12 @@
 
     connectPhone().then(startHeartbeat);
 
+    // Go offline immediately when the user leaves the page
+    window.addEventListener('pagehide', () => {
+      const payload = JSON.stringify({ room, session: sessionId, type: 'phone' });
+      navigator.sendBeacon('/api/disconnect', new Blob([payload], { type: 'application/json' }));
+    });
+
     // ── Camera / upload ──────────────────────────────────────────────────────
     const input     = document.getElementById('capture-input');
     const mainBtn   = document.getElementById('main-btn');

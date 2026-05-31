@@ -111,6 +111,23 @@ app.post('/api/connect', (req, res) => {
   res.json({ ok: true, name: deviceName });
 });
 
+// ── POST /api/disconnect ──────────────────────────────────────────────────────
+// Called (via sendBeacon) when a device leaves. Marks it offline immediately.
+app.post('/api/disconnect', (req, res) => {
+  const { room: rawRoom, session, type } = req.body;
+  if (!rawRoom || !session) return res.status(400).json({ error: 'Missing fields' });
+
+  const room = rawRoom.trim().toUpperCase();
+  const r    = getRoom(room);
+  const slot = type === 'phone' ? 'phone' : 'laptop';
+
+  if (r[slot] && r[slot].session === session) {
+    r[slot].lastSeen = 0; // immediately offline
+    console.log(`[${room}] ${slot} disconnected`);
+  }
+  res.json({ ok: true });
+});
+
 // ── POST /api/heartbeat ───────────────────────────────────────────────────────
 // Keep a device's "online" status alive. Call every ~60 s.
 app.post('/api/heartbeat', (req, res) => {
