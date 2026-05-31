@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NCNMO — Patient Viewer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    header {
+      max-width: 700px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .title-block h1 { font-size: 20px; font-weight: 800; color: #1a2a3a; }
+    .title-block p  { font-size: 13px; color: #888; margin-top: 2px; }
+
+    .pulse-row { display: flex; align-items: center; gap: 8px; }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #94a3b8;
+    }
+    .dot.waiting { background: #f59e0b; animation: blink 1.2s infinite; }
+    .dot.received { background: #22c55e; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .dot-label { font-size: 13px; color: #666; font-weight: 500; }
+
+    .card {
+      max-width: 700px;
+      margin: 0 auto 16px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .field:last-child { border-bottom: none; }
+
+    .field-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: 150px;
+      flex-shrink: 0;
+    }
+
+    .field-input {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a2a3a;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .field-input:focus { border-color: #3b82f6; background: #fff; }
+    .field-input.empty { color: #94a3b8; font-weight: 400; }
+
+    .copy-btn {
+      padding: 6px 14px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      color: #3b82f6;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: #dbeafe; }
+    .copy-btn:active { transform: scale(0.95); }
+    .copy-btn.copied { background: #dcfce7; border-color: #86efac; color: #16a34a; }
+
+    .note {
+      font-size: 12px;
+      color: #f59e0b;
+      margin-left: 8px;
+      font-weight: 500;
+    }
+
+    .waiting-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #94a3b8;
+    }
+    .waiting-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .waiting-state h2 { font-size: 18px; font-weight: 700; color: #64748b; margin-bottom: 8px; }
+    .waiting-state p { font-size: 14px; line-height: 1.6; }
+
+    .timestamp {
+      max-width: 700px;
+      margin: 0 auto;
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: right;
+      padding-right: 4px;
+    }
+
+    .raw-section {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    details summary {
+      font-size: 12px;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 8px 4px;
+      user-select: none;
+    }
+    .raw-text {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 12px;
+      color: #64748b;
+      white-space: pre-wrap;
+      font-family: 'SF Mono', Consolas, monospace;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <h1>NCNMO Patient Form</h1>
+    <p>Scan the paper form on your phone — fields appear here automatically</p>
+  </div>
+  <div class="pulse-row">
+    <div class="dot waiting" id="dot"></div>
+    <span class="dot-label" id="dot-label">Waiting for scan…</span>
+  </div>
+</header>
+
+<div id="main">
+  <div class="card">
+    <div class="waiting-state">
+      <div class="icon">📱</div>
+      <h2>Ready</h2>
+      <p>Open the scanner on your phone and take a photo of the patient form.<br>The fields will appear here within a few seconds.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let lastTimestamp = 0;
+
+  // Field definitions — label shown, key from server, optional note
+  const FIELDS = [
+    { label: 'First Name',        key: 'First Name',        note: '' },
+    { label: 'Last Name',         key: 'Last Name',         note: '' },
+    { label: 'Gender',            key: 'Gender (Sex)',       note: 'Select on site' },
+    { label: 'Age',               key: 'Age',               note: 'Site uses Date of Birth' },
+    { label: 'Phone Number',      key: 'Patient Phone No.', note: '' },
+    { label: 'Address',           key: 'Address',           note: '' },
+    { label: 'Occupation',        key: 'Occupation',        note: '' },
+    { label: 'Religion',          key: 'Religion',          note: '' },
+    { label: 'Marital Status',    key: 'Marital Status',    note: 'Select on site' },
+    { label: 'Next of Kin Phone', key: 'Next of Kin Phone', note: '' },
+  ];
+
+  async function poll() {
+    try {
+      const res = await fetch('/api/latest');
+      const data = await res.json();
+      if (data.timestamp && data.timestamp > lastTimestamp) {
+        lastTimestamp = data.timestamp;
+        render(data.fields, data.raw, data.timestamp);
+      }
+    } catch {}
+  }
+
+  function render(fields, raw, timestamp) {
+    const dot = document.getElementById('dot');
+    const label = document.getElementById('dot-label');
+    dot.className = 'dot received';
+    const t = new Date(timestamp);
+    label.textContent = 'Last scan: ' + t.toLocaleTimeString();
+
+    // Reset dot after 3s
+    setTimeout(() => { dot.className = 'dot waiting'; }, 3000);
+
+    const rows = FIELDS.map(f => {
+      const val = (fields && fields[f.key]) ? fields[f.key] : '';
+      const id = 'val-' + f.key.replace(/\W/g,'_');
+      return `
+        <div class="field">
+          <div class="field-label">${f.label}</div>
+          <input class="field-input ${val ? '' : 'empty'}" id="${id}" value="${esc(val)}" placeholder="—">
+          ${f.note ? `<span class="note">⚠ ${f.note}</span>` : ''}
+          <button class="copy-btn" onclick="copyField('${id}', this)">Copy</button>
+        </div>
+      `;
+    }).join('');
+
+    const ts = new Date(timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+    document.getElementById('main').innerHTML = `
+      <div class="card">
+        <div class="card-title">Patient Details — scanned at ${ts}</div>
+        ${rows}
+      </div>
+      <p class="timestamp">Raw OCR below if any field is wrong</p>
+      <div class="raw-section">
+        <details>
+          <summary>▸ Show raw OCR text (use this if a field extracted incorrectly)</summary>
+          <div class="raw-text">${esc(raw || '')}</div>
+        </details>
+      </div>
+    `;
+  }
+
+  function copyField(id, btn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    navigator.clipboard.writeText(el.value.trim()).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 1500);
+    });
+  }
+
+  function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  poll();
+  setInterval(poll, 1500);
+</script>
+</body>
+</html>

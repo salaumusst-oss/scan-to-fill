@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      padding: 16px;
+    }
+    header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 14px;
+    }
+    h2 { font-size: 15px; font-weight: 800; color: #7eb8f7; }
+
+    .status-pill {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 12px; border-radius: 10px;
+      background: #1a1a2e; border: 1px solid #2a2a45;
+      margin-bottom: 12px;
+    }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #f87171; flex-shrink: 0; }
+    .dot.ok { background: #4ade80; }
+    .dot.pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .status-text { font-size: 12px; color: #a0a0c0; }
+
+    .section-label {
+      font-size: 10px; font-weight: 700; color: #555;
+      text-transform: uppercase; letter-spacing: .8px; margin-bottom: 7px;
+    }
+    .field-list { margin-bottom: 14px; }
+    .field-item {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 5px 0; border-bottom: 1px solid #1a1a2e; gap: 8px;
+    }
+    .field-item:last-child { border-bottom: none; }
+    .fname { font-size: 12px; color: #7eb8f7; flex-shrink: 0; }
+    .fval  { font-size: 12px; color: #c0c0d8; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+    .empty { color: #444; font-size: 12px; text-align: center; padding: 18px 0; line-height: 1.6; }
+
+    .btn {
+      display: block; width: 100%; padding: 10px;
+      border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .btn:active { opacity: .8; }
+    .btn + .btn { margin-top: 7px; }
+    .btn-fill  { background: #4ade80; color: #0f0f1a; }
+    .btn-clear { background: #2a2a45; color: #f87171; border: 1px solid #3a3a55; }
+    .btn-setup { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; }
+    .btn:disabled { opacity: .3; cursor: default; }
+
+    /* ── Settings panel ── */
+    #settings-panel { display: none; margin-top: 14px; }
+    #settings-panel.open { display: block; }
+    .setting-row { margin-bottom: 10px; }
+    .setting-row label { display: block; font-size: 10px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 5px; }
+    .setting-row input {
+      width: 100%; padding: 8px 10px;
+      background: #1a1a2e; border: 1px solid #2a2a45;
+      border-radius: 8px; color: #e8e8f0; font-size: 12px;
+      font-family: monospace;
+    }
+    .setting-row input:focus { outline: none; border-color: #7eb8f7; }
+    .save-btn {
+      display: block; width: 100%; padding: 8px;
+      background: #7eb8f7; color: #0f0f1a;
+      border: none; border-radius: 8px;
+      font-size: 12px; font-weight: 800; cursor: pointer; margin-top: 10px;
+    }
+    .phone-url {
+      margin-top: 10px; padding: 8px 10px;
+      background: #1a1a2e; border: 1px solid #2a2a45;
+      border-radius: 8px; font-size: 11px; color: #7eb8f7;
+      word-break: break-all; line-height: 1.5;
+    }
+    .phone-url-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+    .copy-link { font-size: 11px; color: #7eb8f7; cursor: pointer; text-decoration: underline; margin-top: 4px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>📄 Scan to Fill</h2>
+  </header>
+
+  <div class="status-pill">
+    <div class="dot pulse" id="dot"></div>
+    <span class="status-text" id="status-text">Connecting…</span>
+  </div>
+
+  <div id="fields-section"></div>
+
+  <button class="btn btn-fill"  id="fill-btn"  style="display:none">↩ Fill Page Now</button>
+  <button class="btn btn-clear" id="clear-btn">✕ Clear Form</button>
+  <button class="btn btn-setup" id="setup-btn">⚙️ Settings</button>
+
+  <!-- Settings panel (hidden until ⚙️ is clicked) -->
+  <div id="settings-panel">
+    <div class="setting-row" style="margin-top:12px">
+      <label>Server URL</label>
+      <input id="input-server" type="url" placeholder="http://localhost:3000">
+    </div>
+    <div class="setting-row">
+      <label>Your Room Code</label>
+      <input id="input-room" type="text" maxlength="8" placeholder="e.g. A1B2">
+    </div>
+    <button class="save-btn" id="save-btn">Save</button>
+
+    <div style="margin-top:12px">
+      <div class="phone-url-label">Phone URL for your room</div>
+      <div class="phone-url" id="phone-url-display">—</div>
+      <span class="copy-link" id="copy-link">Copy link</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

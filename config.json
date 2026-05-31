@@ -1,0 +1,10 @@
+{
+  "targetUrl": "https://ncnmoplatformemr.axocheck.com/patient/create/",
+  "mappings": [
+    {
+      "name": "himothy",
+      "pattern": "fff",
+      "selector": "yes sir"
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Scan Form</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .logo { font-size: 56px; margin-bottom: 12px; }
+    h1 { font-size: 22px; font-weight: 800; color: #7eb8f7; margin-bottom: 6px; }
+    .sub { font-size: 14px; color: #555; margin-bottom: 6px; }
+    .room-badge {
+      display: inline-block;
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      color: #7eb8f7;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      padding: 4px 12px;
+      border-radius: 100px;
+      margin-bottom: 36px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      max-width: 320px;
+      padding: 18px;
+      border: none;
+      border-radius: 16px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s;
+      margin: 0 auto 12px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+    .btn-blue { background: #7eb8f7; color: #0f0f1a; }
+    .btn-gray { background: #1a1a2e; color: #555; border: 1px solid #2a2a45; font-size: 14px; padding: 14px; }
+
+    #preview {
+      width: 100%; max-width: 320px; max-height: 280px;
+      object-fit: contain; border-radius: 12px;
+      margin-bottom: 20px; display: none;
+    }
+    .status { margin-top: 16px; font-size: 15px; font-weight: 600; min-height: 24px; }
+    .status.ok   { color: #4ade80; }
+    .status.err  { color: #f87171; }
+    .status.info { color: #7eb8f7; }
+    #capture-input { display: none; }
+  </style>
+</head>
+<body>
+  <div class="logo">📄</div>
+  <h1>NCNMO Scanner</h1>
+  <p class="sub">Scan a patient form — it will appear on the laptop</p>
+  <div class="room-badge" id="room-label">Room: …</div>
+
+  <img id="preview" alt="preview">
+  <input id="capture-input" type="file" accept="image/*" capture="environment">
+
+  <button class="btn btn-blue" id="main-btn">📷  Take Photo</button>
+  <button class="btn btn-gray" id="retake-btn" style="display:none">Retake</button>
+
+  <div class="status" id="status"></div>
+
+  <script>
+    // Room code comes from the URL: /mobile.html?room=XXXX
+    const params  = new URLSearchParams(location.search);
+    const room    = (params.get('room') || 'DEFAULT').toUpperCase();
+    document.getElementById('room-label').textContent = 'Room: ' + room;
+
+    const input    = document.getElementById('capture-input');
+    const mainBtn  = document.getElementById('main-btn');
+    const retakeBtn = document.getElementById('retake-btn');
+    const preview  = document.getElementById('preview');
+    const status   = document.getElementById('status');
+
+    mainBtn.addEventListener('click', capture);
+    retakeBtn.addEventListener('click', capture);
+
+    function capture() {
+      input.value = '';
+      input.click();
+    }
+
+    input.addEventListener('change', async () => {
+      const file = input.files[0];
+      if (!file) return;
+
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+      retakeBtn.style.display = 'block';
+
+      setStatus('Uploading & reading text…', 'info');
+      mainBtn.disabled = true;
+      mainBtn.textContent = '⏳  Processing…';
+
+      let blob = file;
+      try { blob = await resize(file, 1800); } catch {}
+
+      const form = new FormData();
+      form.append('image', blob, 'scan.jpg');
+      form.append('room', room);   // ← tells the server which room to store this under
+
+      try {
+        const res  = await fetch('/api/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Upload failed');
+        setStatus('✓ Done! Check the laptop.', 'ok');
+        mainBtn.textContent = '📷  Scan Another';
+      } catch (e) {
+        setStatus('✗ ' + e.message, 'err');
+        mainBtn.textContent = '📷  Try Again';
+      } finally {
+        mainBtn.disabled = false;
+      }
+    });
+
+    function resize(file, maxW) {
+      return new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => {
+          const s = Math.min(1, maxW / img.width);
+          const c = document.createElement('canvas');
+          c.width = img.width * s; c.height = img.height * s;
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          c.toBlob(b => b ? res(b) : rej(), 'image/jpeg', 0.88);
+        };
+        img.onerror = rej;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    function setStatus(msg, type) {
+      status.textContent  = msg;
+      status.className = 'status ' + type;
+    }
+  </script>
+</body>
+</html>

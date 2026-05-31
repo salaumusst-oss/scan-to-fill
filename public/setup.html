@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan to Fill — Setup</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f4f6fb;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+    .container { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: 24px; font-weight: 800; color: #1a1a2e; margin-bottom: 6px; }
+    .subtitle { color: #666; font-size: 14px; margin-bottom: 32px; }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    h2 { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+    .desc { font-size: 13px; color: #888; margin-bottom: 16px; }
+
+    label { display: block; font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid #e0e0e8;
+      border-radius: 9px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #fafafa;
+    }
+    input:focus { border-color: #7eb8f7; background: #fff; }
+
+    /* Mapping table */
+    .mapping-header {
+      display: grid;
+      grid-template-columns: 160px 1fr 1fr 36px;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .mapping-header span { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .mapping-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 1fr 36px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .mapping-row input { margin: 0; }
+
+    .del-btn {
+      width: 36px; height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: #ffe4e4;
+      color: #e53e3e;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .del-btn:hover { background: #fcc; }
+
+    .add-btn {
+      margin-top: 10px;
+      padding: 9px 16px;
+      border: 1.5px dashed #c0c8e0;
+      border-radius: 9px;
+      background: transparent;
+      color: #7eb8f7;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .add-btn:hover { border-color: #7eb8f7; background: #f0f7ff; }
+
+    .examples {
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: #f9f9fc;
+      border-radius: 10px;
+      border: 1px solid #eee;
+    }
+    .examples h3 { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .example-row { display: grid; grid-template-columns: 120px 1fr 1fr; gap: 8px; margin-bottom: 6px; }
+    .example-row span { font-size: 12px; color: #666; padding: 3px 0; }
+    code {
+      background: #eef1f8;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 11px;
+      color: #4a4a8a;
+    }
+
+    .save-btn {
+      width: 100%;
+      padding: 16px;
+      background: #7eb8f7;
+      color: #0f0f1a;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .save-btn:hover { opacity: 0.92; }
+    .save-btn:active { transform: scale(0.98); }
+
+    .status {
+      margin-top: 12px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+    }
+    .status.success { background: #e8faf0; color: #2d7a4f; display: block; }
+    .status.error   { background: #fdecea; color: #c0392b; display: block; }
+
+    .info-box {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      background: #eef5ff;
+      border-radius: 10px;
+      border: 1px solid #c8dcf8;
+      margin-bottom: 20px;
+    }
+    .info-box .icon { font-size: 20px; flex-shrink: 0; }
+    .info-box p { font-size: 13px; color: #3a5a8a; line-height: 1.5; }
+    .info-box a { color: #7eb8f7; }
+
+    @media (max-width: 600px) {
+      .mapping-header, .mapping-row { grid-template-columns: 1fr; }
+      .mapping-header { display: none; }
+      .del-btn { width: 100%; }
+      .example-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>⚙️ Scan to Fill — Setup</h1>
+  <p class="subtitle">Configure once, scan forever.</p>
+
+  <div class="info-box">
+    <div class="icon">💡</div>
+    <p>
+      <strong>How it works:</strong> OCR reads your paper form as raw text.
+      A <strong>regex pattern</strong> (with one capture group) extracts the value.
+      A <strong>CSS selector</strong> tells the browser extension which form field to fill on your website.
+    </p>
+  </div>
+
+  <!-- Target URL -->
+  <div class="card">
+    <h2>Target Website</h2>
+    <p class="desc">The website URL where you want forms auto-filled.</p>
+    <label>Website URL</label>
+    <input type="url" id="targetUrl" placeholder="https://example.com/intake-form">
+  </div>
+
+  <!-- Field Mappings -->
+  <div class="card">
+    <h2>Field Mappings</h2>
+    <p class="desc">
+      Map each paper field → how to extract it from OCR text → which input to fill on the website.
+      Right-click an input on your target site and choose "Inspect" to find its CSS selector.
+    </p>
+
+    <div class="mapping-header">
+      <span>Field Name</span>
+      <span>Regex Pattern <span style="font-weight:400;text-transform:none">(group 1 = value)</span></span>
+      <span>CSS Selector <span style="font-weight:400;text-transform:none">(on target site)</span></span>
+      <span></span>
+    </div>
+
+    <div id="mappings-container"></div>
+
+    <button class="add-btn" onclick="addRow()">+ Add Field</button>
+
+    <div class="examples">
+      <h3>Examples</h3>
+      <div class="example-row" style="margin-bottom:8px">
+        <span style="font-weight:600;color:#555">Field Name</span>
+        <span style="font-weight:600;color:#555">Regex Pattern</span>
+        <span style="font-weight:600;color:#555">CSS Selector</span>
+      </div>
+      <div class="example-row">
+        <span>Full Name</span>
+        <span><code>Name:\s*(.+)</code></span>
+        <span><code>#fullName</code></span>
+      </div>
+      <div class="example-row">
+        <span>Date of Birth</span>
+        <span><code>DOB:\s*(\d{2}\/\d{2}\/\d{4})</code></span>
+        <span><code>input[name="dob"]</code></span>
+      </div>
+      <div class="example-row">
+        <span>Email</span>
+        <span><code>([\w.+\-]+@[\w\-]+\.\w+)</code></span>
+        <span><code>input[type="email"]</code></span>
+      </div>
+      <div class="example-row">
+        <span>Phone</span>
+        <span><code>Phone:\s*([\d\s\-().+]+)</code></span>
+        <span><code>input[name="phone"]</code></span>
+      </div>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="save()">💾  Save Configuration</button>
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+  let config = { targetUrl: '', mappings: [] };
+
+  fetch('/api/config').then(r => r.json()).then(c => {
+    config = c;
+    document.getElementById('targetUrl').value = c.targetUrl || '';
+    const rows = (c.mappings && c.mappings.length > 0) ? c.mappings : [{}];
+    rows.forEach(m => addRow(m));
+  }).catch(() => addRow());
+
+  function addRow(data = {}) {
+    const div = document.createElement('div');
+    div.className = 'mapping-row';
+    div.innerHTML = `
+      <input type="text" placeholder="Full Name" value="${esc(data.name || '')}">
+      <input type="text" placeholder="Name:\\s*(.+)" value="${esc(data.pattern || '')}">
+      <input type="text" placeholder="#fullName" value="${esc(data.selector || '')}">
+      <button class="del-btn" title="Remove" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.getElementById('mappings-container').appendChild(div);
+  }
+
+  async function save() {
+    const mappings = [];
+    document.querySelectorAll('#mappings-container .mapping-row').forEach(row => {
+      const [nameEl, patternEl, selectorEl] = row.querySelectorAll('input');
+      const name = nameEl.value.trim();
+      const selector = selectorEl.value.trim();
+      if (name && selector) {
+        mappings.push({ name, pattern: patternEl.value.trim(), selector });
+      }
+    });
+
+    const newConfig = {
+      targetUrl: document.getElementById('targetUrl').value.trim(),
+      mappings
+    };
+
+    const status = document.getElementById('status');
+    try {
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newConfig)
+      });
+      const data = await res.json();
+      status.className = 'status success';
+      status.textContent = `✓ Saved ${mappings.length} field mapping${mappings.length !== 1 ? 's' : ''}.`;
+    } catch (err) {
+      status.className = 'status error';
+      status.textContent = '✗ Save failed: ' + err.message;
+    }
+    status.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function esc(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>
