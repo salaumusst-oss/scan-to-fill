@@ -40,7 +40,7 @@ const scans = {};  // { roomCode: { fields, timestamp } }
 const rooms = {};  // { roomCode: { history: [...], laptop: {...}, phone: {...} } }
 
 // users: persistent name → room code mapping
-const users = {};  // { normalizedName: roomCode }
+const users = {};  // { normalizedName: { room, displayName } }
 
 function getUserRoom(name) {
   const key = name.trim().toLowerCase();
@@ -48,14 +48,14 @@ function getUserRoom(name) {
     // Generate a unique random 4-letter code
     const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
     let code;
-    const existing = new Set(Object.values(users));
+    const existing = new Set(Object.values(users).map(u => u.room));
     do {
       code = Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
     } while (existing.has(code));
-    users[key] = code;
+    users[key] = { room: code, displayName: name.trim() };
     console.log(`[user] "${name}" → room ${code}`);
   }
-  return users[key];
+  return users[key].room;
 }
 
 function getRoom(code) {
@@ -92,6 +92,14 @@ app.get('/api/user-room', (req, res) => {
   const name = (req.query.name || '').trim();
   if (!name) return res.status(400).json({ error: 'Name required' });
   res.json({ room: getUserRoom(name) });
+});
+
+// ── GET /api/room-name?room=XXXX ──────────────────────────────────────────────
+// Returns the display name of whoever owns this room code.
+app.get('/api/room-name', (req, res) => {
+  const room  = (req.query.room || '').trim().toUpperCase();
+  const entry = Object.values(users).find(u => u.room === room);
+  res.json({ name: entry ? entry.displayName : null });
 });
 
 // ── POST /api/connect ─────────────────────────────────────────────────────────

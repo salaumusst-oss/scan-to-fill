@@ -83,7 +83,7 @@
   <!-- ── Scan screen ── -->
   <div id="screen-scan">
     <div class="logo">📄</div>
-    <h1>NCNMO Scanner</h1>
+    <h1 id="welcome-heading">NCNMO Scanner</h1>
     <p class="sub">Scan a patient form — it will appear on the laptop</p>
     <div class="room-badge" id="room-label">Room: …</div>
 
@@ -164,6 +164,16 @@
     }
 
     connectPhone().then(startHeartbeat);
+
+    // Show the name of whoever owns this room code
+    fetch(`/api/room-name?room=${room}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.name) {
+          document.getElementById('welcome-heading').textContent = `Welcome, ${data.name}! 👋`;
+        }
+      })
+      .catch(() => {});
 
     // Go offline immediately when the user leaves the page
     window.addEventListener('pagehide', () => {
