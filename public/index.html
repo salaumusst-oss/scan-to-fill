@@ -113,14 +113,6 @@
       background: #0f0f1a; border-radius: 10px;
       padding: 14px; text-align: center;
     }
-    .regen-btn {
-      width: 100%; padding: 10px;
-      background: none; border: 1px solid #2a2a45;
-      border-radius: 9px; color: #7eb8f7;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-    }
-    .regen-btn:hover { background: #2a2a45; }
-
     /* QR code card */
     .qr-wrap {
       background: white;
@@ -300,7 +292,6 @@
       <div class="card">
         <div class="card-label">Your Room Code</div>
         <div class="room-display" id="room-display">—</div>
-        <button class="regen-btn" id="regen-btn">↻ Generate New Code</button>
       </div>
 
       <!-- QR code -->
@@ -563,13 +554,6 @@
   });
   document.getElementById('name-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') login(document.getElementById('name-input').value);
-  });
-
-  document.getElementById('regen-btn').addEventListener('click', () => {
-    const newRoom = randomRoom();
-    updateRoom(newRoom);
-    liveRoom = newRoom;
-    refreshAll();
   });
 
   document.getElementById('copy-btn').addEventListener('click', () => {
