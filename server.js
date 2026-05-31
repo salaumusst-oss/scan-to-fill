@@ -39,6 +39,25 @@ const scans = {};  // { roomCode: { fields, timestamp } }
 // rooms: full state per room — history + device connections
 const rooms = {};  // { roomCode: { history: [...], laptop: {...}, phone: {...} } }
 
+// users: persistent name → room code mapping
+const users = {};  // { normalizedName: roomCode }
+
+function getUserRoom(name) {
+  const key = name.trim().toLowerCase();
+  if (!users[key]) {
+    // Generate a unique random 4-letter code
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code;
+    const existing = new Set(Object.values(users));
+    do {
+      code = Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
+    } while (existing.has(code));
+    users[key] = code;
+    console.log(`[user] "${name}" → room ${code}`);
+  }
+  return users[key];
+}
+
 function getRoom(code) {
   if (!rooms[code]) rooms[code] = { history: [], laptop: null, phone: null };
   return rooms[code];
@@ -60,6 +79,14 @@ function parseDevice(ua) {
   if (/Linux/i.test(ua))     return 'Linux PC';
   return 'Unknown device';
 }
+
+// ── GET /api/user-room?name=NAME ──────────────────────────────────────────────
+// Returns (and creates if new) a persistent room code for this person.
+app.get('/api/user-room', (req, res) => {
+  const name = (req.query.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'Name required' });
+  res.json({ room: getUserRoom(name) });
+});
 
 // ── POST /api/connect ─────────────────────────────────────────────────────────
 // Called by laptop (extension) and phone when they first connect to a room.

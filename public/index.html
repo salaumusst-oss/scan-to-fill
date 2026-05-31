@@ -529,13 +529,32 @@
   }
 
   // ── Login ────────────────────────────────────────────────
-  function login(name) {
+  async function login(name) {
     name = name.trim();
     if (!name) return;
-    const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
-    const room  = saved.room || randomRoom(); // random 4-letter code
-    localStorage.setItem('stf-user', JSON.stringify({ name, room }));
-    showDashboard(name, room);
+
+    const btn = document.getElementById('start-btn');
+    btn.disabled    = true;
+    btn.textContent = 'Loading…';
+
+    try {
+      // Server assigns a persistent room code for this name —
+      // same name always gets the same code, even across sessions/devices.
+      const res  = await fetch(`/api/user-room?name=${encodeURIComponent(name)}`);
+      const data = await res.json();
+      const room = data.room;
+      localStorage.setItem('stf-user', JSON.stringify({ name, room }));
+      showDashboard(name, room);
+    } catch {
+      // Fallback if server unreachable: use cached room or generate locally
+      const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
+      const room  = saved.room || randomRoom();
+      localStorage.setItem('stf-user', JSON.stringify({ name, room }));
+      showDashboard(name, room);
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Get Started →';
+    }
   }
 
   function logout() {
@@ -565,15 +584,17 @@
   });
 
   // ── Auto-login if returning user ─────────────────────────
-  window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('DOMContentLoaded', async () => {
     const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
     if (saved.name) {
-      const room = saved.room || randomRoom();
-      if (!saved.room) {
-        saved.room = room;
+      // Re-fetch room from server so it stays in sync
+      try {
+        const res  = await fetch(`/api/user-room?name=${encodeURIComponent(saved.name)}`);
+        const data = await res.json();
+        saved.room = data.room;
         localStorage.setItem('stf-user', JSON.stringify(saved));
-      }
-      showDashboard(saved.name, room);
+      } catch { /* use whatever is in localStorage */ }
+      showDashboard(saved.name, saved.room || randomRoom());
     }
   });
 </script>
