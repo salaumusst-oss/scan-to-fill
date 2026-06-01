@@ -4,6 +4,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const archiver = require('archiver');
 const os   = require('os');
 const path = require('path');
+const fs   = require('fs');
 
 const app    = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -54,7 +55,14 @@ app.get('/api/stream', (req, res) => {
 
   if (!sseClients[room]) sseClients[room] = [];
   sseClients[room].push(res);
+
+  // Ping every 20s — keeps Render from closing the idle connection
+  const keepAlive = setInterval(() => {
+    try { res.write(': ping\n\n'); } catch { clearInterval(keepAlive); }
+  }, 20000);
+
   req.on('close', () => {
+    clearInterval(keepAlive);
     sseClients[room] = sseClients[room].filter(c => c !== res);
   });
 });
@@ -101,6 +109,46 @@ function makeScanId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
 }
 
+// ── Persistence: save/load state to disk so restarts don't lose data ──────────
+const DATA_FILE = path.join(__dirname, 'data', 'state.json');
+
+function loadState() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    if (saved.users) Object.assign(users, saved.users);
+    if (saved.rooms) {
+      for (const [code, r] of Object.entries(saved.rooms)) {
+        rooms[code] = {
+          unopened: r.unopened || [],
+          opened:   r.opened   || [],
+          selected: r.selected || null,
+          laptop:   null,   // devices re-register via heartbeat
+          phones:   [],
+        };
+      }
+    }
+    console.log(`✅ State loaded — ${Object.keys(users).length} users, ${Object.keys(rooms).length} rooms`);
+  } catch {
+    console.log('No saved state found — starting fresh.');
+  }
+}
+
+let saveTimer = null;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+      // Strip device connections — they're ephemeral and re-register via heartbeat
+      const roomsToSave = {};
+      for (const [code, r] of Object.entries(rooms)) {
+        roomsToSave[code] = { unopened: r.unopened, opened: r.opened, selected: r.selected };
+      }
+      fs.writeFileSync(DATA_FILE, JSON.stringify({ users, rooms: roomsToSave }));
+    } catch (e) { console.error('Save failed:', e.message); }
+  }, 500); // debounce — batch rapid changes into one write
+}
+
 // ── Users: name → persistent room code ────────────────────────────────────────
 const users = {};  // { normalizedName: { room, displayName } }
 
@@ -119,10 +167,15 @@ function getUserRoom(name) {
   return users[key].room;
 }
 
+loadState(); // ← restore state from disk on startup
+
 app.get('/api/user-room', (req, res) => {
   const name = (req.query.name || '').trim();
   if (!name) return res.status(400).json({ error: 'Name required' });
-  res.json({ room: getUserRoom(name) });
+  const isNew = !users[name.trim().toLowerCase()];
+  const room  = getUserRoom(name);
+  if (isNew) scheduleSave(); // new user created — persist immediately
+  res.json({ room });
 });
 
 app.get('/api/room-name', (req, res) => {
@@ -229,9 +282,8 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
 
     console.log(`[${room}] Scan from ${scannerName}:`, JSON.stringify(fields, null, 2));
 
-    // Push to website instantly — no polling delay
+    scheduleSave(); // persist the new scan
     sseNotify(room, 'new-scan', { unopened: r.unopened, opened: r.opened, selected: r.selected });
-
     res.json({ ok: true, fields, id: entry.id });
   } catch (err) {
     console.error(`[${room}] AI error:`, err.message);
@@ -268,6 +320,7 @@ app.post('/api/scan/select', (req, res) => {
     r.opened.unshift(scan);
     if (r.opened.length > 50) r.opened = r.opened.slice(0, 50);
     r.selected = scan;
+    scheduleSave();
     console.log(`[${room}] Selected scan ${id} (from unopened)`);
     return res.json({ ok: true, scan });
   }
@@ -276,6 +329,7 @@ app.post('/api/scan/select', (req, res) => {
   const openedScan = r.opened.find(s => s.id === id);
   if (openedScan) {
     r.selected = openedScan;
+    scheduleSave();
     console.log(`[${room}] Re-selected scan ${id} (from opened)`);
     return res.json({ ok: true, scan: openedScan });
   }
@@ -308,7 +362,7 @@ async function extractWithAI(buffer, mimeType) {
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5',
     max_tokens: 512,
     messages: [{
       role: 'user',
