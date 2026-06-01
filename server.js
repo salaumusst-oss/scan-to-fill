@@ -34,6 +34,31 @@ const client = new Anthropic();
 const EXTENSION_VERSION = '1.3.0';
 app.get('/api/version', (req, res) => res.json({ version: EXTENSION_VERSION }));
 
+// ── SSE: push events to website clients the instant a scan arrives ─────────────
+const sseClients = {};  // { roomCode: [res, ...] }
+
+function sseNotify(room, event, data) {
+  (sseClients[room] || []).forEach(res => {
+    try { res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); } catch {}
+  });
+}
+
+app.get('/api/stream', (req, res) => {
+  const room = (req.query.room || '').trim().toUpperCase();
+  res.setHeader('Content-Type',  'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection',    'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+  res.write('event: connected\ndata: {}\n\n');
+
+  if (!sseClients[room]) sseClients[room] = [];
+  sseClients[room].push(res);
+  req.on('close', () => {
+    sseClients[room] = sseClients[room].filter(c => c !== res);
+  });
+});
+
 // ── In-memory state ────────────────────────────────────────────────────────────
 //
 // rooms: { roomCode: {
@@ -203,6 +228,10 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     if (r.unopened.length > 20) r.unopened = r.unopened.slice(0, 20);
 
     console.log(`[${room}] Scan from ${scannerName}:`, JSON.stringify(fields, null, 2));
+
+    // Push to website instantly — no polling delay
+    sseNotify(room, 'new-scan', { unopened: r.unopened, opened: r.opened, selected: r.selected });
+
     res.json({ ok: true, fields, id: entry.id });
   } catch (err) {
     console.error(`[${room}] AI error:`, err.message);

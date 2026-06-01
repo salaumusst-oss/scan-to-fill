@@ -328,7 +328,7 @@
   // ── Room ─────────────────────────────────────────────────
   let liveRoom = null;
   let selectedId = null;
-  let lastUnopened0Timestamp = 0;
+  let liveSSE = null;
 
   function updateRoomDisplay(room) {
     document.getElementById('room-display').textContent = room;
@@ -347,8 +347,36 @@
     liveRoom = room;
     updateRoomDisplay(room);
     setupNotifications();
-    refreshAll();
-    setInterval(refreshAll, 10000); // every 10 s
+    refreshAll();              // initial load
+    startSSE(room);            // instant push from server
+    setInterval(refreshDevices, 30000); // devices poll every 30s
+  }
+
+  // ── SSE: server pushes scan updates instantly ─────────────
+  function startSSE(room) {
+    if (liveSSE) liveSSE.close();
+    liveSSE = new EventSource(`/api/stream?room=${encodeURIComponent(room)}`);
+    let firstEvent = true;
+
+    liveSSE.addEventListener('new-scan', e => {
+      const data = JSON.parse(e.data);
+      renderScans(data);
+      if (!firstEvent) {
+        const newest = data.unopened?.[0];
+        if (newest) {
+          const f = newest.fields || {};
+          const name = [f['First Name'], f['Last Name']].filter(Boolean).join(' ') || 'a patient';
+          showScanBanner(name);
+          sendBrowserNotification(name);
+        }
+      }
+      firstEvent = false;
+    });
+
+    liveSSE.onerror = () => {
+      liveSSE.close();
+      setTimeout(() => { if (liveRoom) startSSE(liveRoom); }, 3000);
+    };
   }
 
   async function refreshAll() {
@@ -356,23 +384,12 @@
     await Promise.all([refreshScans(), refreshDevices()]);
   }
 
-  // ── Scan queue ────────────────────────────────────────────
+  // ── Scan queue (initial load) ─────────────────────────────
   async function refreshScans() {
     try {
       const res  = await fetch(`/api/scans?room=${liveRoom}`);
       const data = await res.json();
       renderScans(data);
-
-      // Notify on new arrivals
-      const newest = data.unopened?.[0];
-      if (newest && newest.timestamp > lastUnopened0Timestamp && lastUnopened0Timestamp !== 0) {
-        const f = newest.fields || {};
-        const name = [f['First Name'], f['Last Name']].filter(Boolean).join(' ') || 'a patient';
-        showScanBanner(name);
-        sendBrowserNotification(name);
-      }
-      if (newest) lastUnopened0Timestamp = newest.timestamp;
-
     } catch {}
   }
 
