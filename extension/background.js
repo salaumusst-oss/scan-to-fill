@@ -47,6 +47,7 @@ async function sendHeartbeat() {
 }
 
 // ── Poll for new scans → desktop notification ─────────────────────────────────
+// Watches the unopened queue — fires when a new scan arrives on the website.
 async function pollForNewScan() {
   const { roomCode } = await getSettings();
   if (!roomCode) return;
@@ -54,22 +55,23 @@ async function pollForNewScan() {
   return new Promise(resolve => {
     chrome.storage.local.get({ lastSeenTimestamp: 0 }, async ({ lastSeenTimestamp }) => {
       try {
-        const res  = await fetch(`${DEFAULT_SERVER}/api/latest?room=${roomCode}`, { signal: AbortSignal.timeout(10000) });
-        const scan = await res.json();
+        const res  = await fetch(`${DEFAULT_SERVER}/api/scans?room=${roomCode}`, { signal: AbortSignal.timeout(10000) });
+        const data = await res.json();
 
-        if (scan.timestamp && scan.timestamp > lastSeenTimestamp && scan.fields) {
-          // New scan arrived!
-          chrome.storage.local.set({ lastSeenTimestamp: scan.timestamp });
+        // Check the most recent unread scan
+        const newest = data.unopened?.[0];
+        if (newest && newest.timestamp > lastSeenTimestamp) {
+          chrome.storage.local.set({ lastSeenTimestamp: newest.timestamp });
 
-          const f    = scan.fields;
+          const f    = newest.fields || {};
           const name = [f['First Name'], f['Last Name']].filter(Boolean).join(' ') || 'a patient';
           const age  = f['Age'] ? `, ${f['Age']} yrs` : '';
 
           chrome.notifications.create({
             type:    'basic',
             iconUrl: 'icon.png',
-            title:   '📄 New Scan Ready!',
-            message: `${name}${age} — click Fill Page Now to auto-fill the form.`
+            title:   '📄 New Scan Arrived!',
+            message: `${name}${age} — go to the website and click the scan to fill the form.`
           });
         }
       } catch { /* network error — ignore */ }

@@ -11,7 +11,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS — allow Chrome extension and any origin to reach the server
+// CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -22,48 +22,40 @@ app.use((req, res, next) => {
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('\n❌ ANTHROPIC_API_KEY is not set.');
-  if (process.env.NODE_ENV === 'production') {
-    console.error('   Set it in your Render dashboard → Environment tab.\n');
-  } else {
-    console.error('   Run: export ANTHROPIC_API_KEY=your_key_here\n');
-  }
+  console.error(process.env.NODE_ENV === 'production'
+    ? '   Set it in your Render dashboard → Environment tab.\n'
+    : '   Run: export ANTHROPIC_API_KEY=your_key_here\n');
   process.exit(1);
 }
 
 const client = new Anthropic();
 
-// ── In-memory store ────────────────────────────────────────────────────────────
-// scans: latest scan per room (for fast polling)
-const scans = {};  // { roomCode: { fields, timestamp } }
+// ── Version ────────────────────────────────────────────────────────────────────
+const EXTENSION_VERSION = '1.2.0';
+app.get('/api/version', (req, res) => res.json({ version: EXTENSION_VERSION }));
 
-// rooms: full state per room — history + device connections
-const rooms = {};  // { roomCode: { history: [...], laptop: {...}, phone: {...} } }
+// ── In-memory state ────────────────────────────────────────────────────────────
+//
+// rooms: { roomCode: {
+//   unopened : [scanEntry, ...]   newest-first, max 20
+//   opened   : [scanEntry, ...]   newest-first
+//   selected : scanEntry | null   the scan the laptop will fill next
+//   laptop   : { session, name, lastSeen } | null
+//   phones   : [{ session, name, lastSeen }, ...]   unlimited
+// }}
+//
+// scanEntry: { id, fields, timestamp, scannerName }
 
-// users: persistent name → room code mapping
-const users = {};  // { normalizedName: { room, displayName } }
-
-function getUserRoom(name) {
-  const key = name.trim().toLowerCase();
-  if (!users[key]) {
-    // Generate a unique random 4-letter code
-    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    let code;
-    const existing = new Set(Object.values(users).map(u => u.room));
-    do {
-      code = Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
-    } while (existing.has(code));
-    users[key] = { room: code, displayName: name.trim() };
-    console.log(`[user] "${name}" → room ${code}`);
-  }
-  return users[key].room;
-}
+const rooms = {};
 
 function getRoom(code) {
-  if (!rooms[code]) rooms[code] = { history: [], laptop: null, phone: null };
+  if (!rooms[code]) rooms[code] = {
+    unopened: [], opened: [], selected: null,
+    laptop: null, phones: []
+  };
   return rooms[code];
 }
 
-// Device is "online" if it sent a heartbeat within the last 3 minutes
 function isOnline(device) {
   if (!device) return false;
   return (Date.now() - device.lastSeen) < 3 * 60 * 1000;
@@ -80,22 +72,34 @@ function parseDevice(ua) {
   return 'Unknown device';
 }
 
-// ── GET /api/version ──────────────────────────────────────────────────────────
-// Bump this whenever a new extension build is pushed so installed extensions
-// know to re-download.
-const EXTENSION_VERSION = '1.2.0';
-app.get('/api/version', (req, res) => res.json({ version: EXTENSION_VERSION }));
+function makeScanId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+}
 
-// ── GET /api/user-room?name=NAME ──────────────────────────────────────────────
-// Returns (and creates if new) a persistent room code for this person.
+// ── Users: name → persistent room code ────────────────────────────────────────
+const users = {};  // { normalizedName: { room, displayName } }
+
+function getUserRoom(name) {
+  const key = name.trim().toLowerCase();
+  if (!users[key]) {
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code;
+    const existing = new Set(Object.values(users).map(u => u.room));
+    do {
+      code = Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
+    } while (existing.has(code));
+    users[key] = { room: code, displayName: name.trim() };
+    console.log(`[user] "${name}" → room ${code}`);
+  }
+  return users[key].room;
+}
+
 app.get('/api/user-room', (req, res) => {
   const name = (req.query.name || '').trim();
   if (!name) return res.status(400).json({ error: 'Name required' });
   res.json({ room: getUserRoom(name) });
 });
 
-// ── GET /api/room-name?room=XXXX ──────────────────────────────────────────────
-// Returns the display name of whoever owns this room code.
 app.get('/api/room-name', (req, res) => {
   const room  = (req.query.room || '').trim().toUpperCase();
   const entry = Object.values(users).find(u => u.room === room);
@@ -103,76 +107,79 @@ app.get('/api/room-name', (req, res) => {
 });
 
 // ── POST /api/connect ─────────────────────────────────────────────────────────
-// Called by laptop (extension) and phone when they first connect to a room.
-// Enforces one laptop + one phone per room.
+// Laptop: one per room (enforced). Phones: unlimited — just register.
 app.post('/api/connect', (req, res) => {
   const { room: rawRoom, session, type, name } = req.body;
   if (!rawRoom || !session || !type) return res.status(400).json({ error: 'Missing fields' });
 
   const room = rawRoom.trim().toUpperCase();
   const r    = getRoom(room);
-  const slot = type === 'phone' ? 'phone' : 'laptop';
-  const curr = r[slot];
+  const deviceName = name || parseDevice(req.headers['user-agent']);
 
-  // Reject if slot is already claimed by a different session that's still online
-  if (curr && curr.session !== session && isOnline(curr)) {
-    return res.json({ ok: false, error: 'Room taken', takenBy: curr.name });
+  if (type === 'phone') {
+    // Update existing session or add new phone
+    const existing = r.phones.find(p => p.session === session);
+    if (existing) {
+      existing.name = deviceName;
+      existing.lastSeen = Date.now();
+    } else {
+      r.phones.push({ session, name: deviceName, lastSeen: Date.now() });
+      console.log(`[${room}] phone connected: ${deviceName}`);
+    }
+    return res.json({ ok: true, name: deviceName });
   }
 
-  const deviceName = name || parseDevice(req.headers['user-agent']);
-  r[slot] = { session, name: deviceName, lastSeen: Date.now() };
-  console.log(`[${room}] ${slot} connected: ${deviceName}`);
+  // Laptop
+  if (r.laptop && r.laptop.session !== session && isOnline(r.laptop)) {
+    return res.json({ ok: false, error: 'Room taken', takenBy: r.laptop.name });
+  }
+  r.laptop = { session, name: deviceName, lastSeen: Date.now() };
+  console.log(`[${room}] laptop connected: ${deviceName}`);
   res.json({ ok: true, name: deviceName });
 });
 
-// ── POST /api/disconnect ──────────────────────────────────────────────────────
-// Called (via sendBeacon) when a device leaves. Marks it offline immediately.
-app.post('/api/disconnect', (req, res) => {
-  const { room: rawRoom, session, type } = req.body;
-  if (!rawRoom || !session) return res.status(400).json({ error: 'Missing fields' });
-
-  const room = rawRoom.trim().toUpperCase();
-  const r    = getRoom(room);
-  const slot = type === 'phone' ? 'phone' : 'laptop';
-
-  if (r[slot] && r[slot].session === session) {
-    r[slot].lastSeen = 0; // immediately offline
-    console.log(`[${room}] ${slot} disconnected`);
-  }
-  res.json({ ok: true });
-});
-
 // ── POST /api/heartbeat ───────────────────────────────────────────────────────
-// Keep a device's "online" status alive. Call every ~60 s.
 app.post('/api/heartbeat', (req, res) => {
   const { room: rawRoom, session, type } = req.body;
   if (!rawRoom || !session) return res.status(400).json({ error: 'Missing fields' });
 
   const room = rawRoom.trim().toUpperCase();
   const r    = getRoom(room);
-  const slot = type === 'phone' ? 'phone' : 'laptop';
 
-  if (r[slot] && r[slot].session === session) {
-    r[slot].lastSeen = Date.now();
+  if (type === 'phone') {
+    const phone = r.phones.find(p => p.session === session);
+    if (phone) phone.lastSeen = Date.now();
+  } else if (r.laptop && r.laptop.session === session) {
+    r.laptop.lastSeen = Date.now();
   }
   res.json({ ok: true });
 });
 
-// ── GET /api/history?room=XXXX ────────────────────────────────────────────────
-// Returns the last 10 scans for the room.
-app.get('/api/history', (req, res) => {
-  const room = (req.query.room || 'default').trim().toUpperCase();
-  res.json({ history: getRoom(room).history });
+// ── POST /api/disconnect ──────────────────────────────────────────────────────
+app.post('/api/disconnect', (req, res) => {
+  const { room: rawRoom, session, type } = req.body;
+  if (!rawRoom || !session) return res.status(400).json({ error: 'Missing fields' });
+
+  const room = rawRoom.trim().toUpperCase();
+  const r    = getRoom(room);
+
+  if (type === 'phone') {
+    const phone = r.phones.find(p => p.session === session);
+    if (phone) { phone.lastSeen = 0; console.log(`[${room}] phone disconnected: ${phone.name}`); }
+  } else if (r.laptop && r.laptop.session === session) {
+    r.laptop.lastSeen = 0;
+    console.log(`[${room}] laptop disconnected`);
+  }
+  res.json({ ok: true });
 });
 
 // ── GET /api/room-status?room=XXXX ────────────────────────────────────────────
-// Returns connected-device info for the room.
 app.get('/api/room-status', (req, res) => {
   const room = (req.query.room || 'default').trim().toUpperCase();
   const r = getRoom(room);
   res.json({
     laptop: r.laptop ? { name: r.laptop.name, online: isOnline(r.laptop) } : null,
-    phone:  r.phone  ? { name: r.phone.name,  online: isOnline(r.phone)  } : null,
+    phones: r.phones.map(p => ({ name: p.name, online: isOnline(p) })),
   });
 });
 
@@ -182,26 +189,77 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
   const room = (req.body.room || 'default').trim().toUpperCase();
   try {
     const fields = await extractWithAI(req.file.buffer, req.file.mimetype);
-    const entry  = { fields, timestamp: Date.now() };
-    scans[room]  = entry;
+    const r      = getRoom(room);
 
-    // Prepend to history, keep last 10
-    const r = getRoom(room);
-    r.history.unshift(entry);
-    if (r.history.length > 10) r.history = r.history.slice(0, 10);
+    // Determine which phone is sending (match session if provided)
+    const senderSession = req.body.session || '';
+    const phone = r.phones.find(p => p.session === senderSession);
+    const scannerName = phone ? phone.name : parseDevice(req.headers['user-agent']);
 
-    console.log(`[${room}] Scan received:`, JSON.stringify(fields, null, 2));
-    res.json({ ok: true, fields });
+    const entry = { id: makeScanId(), fields, timestamp: Date.now(), scannerName };
+
+    // Add to unopened (newest first), cap at 20
+    r.unopened.unshift(entry);
+    if (r.unopened.length > 20) r.unopened = r.unopened.slice(0, 20);
+
+    console.log(`[${room}] Scan from ${scannerName}:`, JSON.stringify(fields, null, 2));
+    res.json({ ok: true, fields, id: entry.id });
   } catch (err) {
     console.error(`[${room}] AI error:`, err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
+// ── GET /api/scans?room=XXXX ──────────────────────────────────────────────────
+// Returns the full scan queue for a room — used by the website and extension.
+app.get('/api/scans', (req, res) => {
+  const room = (req.query.room || 'default').trim().toUpperCase();
+  const r = getRoom(room);
+  res.json({
+    unopened: r.unopened,
+    opened:   r.opened,
+    selected: r.selected,
+  });
+});
+
+// ── POST /api/scan/select ─────────────────────────────────────────────────────
+// Select a scan to fill. Moves it from unopened → opened if needed.
+app.post('/api/scan/select', (req, res) => {
+  const { room: rawRoom, id } = req.body;
+  if (!rawRoom || !id) return res.status(400).json({ error: 'Missing fields' });
+
+  const room = rawRoom.trim().toUpperCase();
+  const r    = getRoom(room);
+
+  // Check unopened first
+  const unopenedIdx = r.unopened.findIndex(s => s.id === id);
+  if (unopenedIdx !== -1) {
+    const [scan] = r.unopened.splice(unopenedIdx, 1);
+    scan.openedAt = Date.now();
+    r.opened.unshift(scan);
+    if (r.opened.length > 50) r.opened = r.opened.slice(0, 50);
+    r.selected = scan;
+    console.log(`[${room}] Selected scan ${id} (from unopened)`);
+    return res.json({ ok: true, scan });
+  }
+
+  // Check opened (re-select)
+  const openedScan = r.opened.find(s => s.id === id);
+  if (openedScan) {
+    r.selected = openedScan;
+    console.log(`[${room}] Re-selected scan ${id} (from opened)`);
+    return res.json({ ok: true, scan: openedScan });
+  }
+
+  res.status(404).json({ error: 'Scan not found' });
+});
+
 // ── GET /api/latest?room=XXXX ─────────────────────────────────────────────────
+// Returns the SELECTED scan — this is what the extension fills.
 app.get('/api/latest', (req, res) => {
   const room = (req.query.room || 'default').trim().toUpperCase();
-  res.json(scans[room] || { fields: null, timestamp: 0 });
+  const r = getRoom(room);
+  res.json(r.selected || { fields: null, timestamp: 0 });
 });
 
 // ── GET /download/extension ───────────────────────────────────────────────────
@@ -215,7 +273,7 @@ app.get('/download/extension', (req, res) => {
   archive.finalize();
 });
 
-// ── Claude AI field extraction ─────────────────────────────────────────────────
+// ── Claude AI extraction ───────────────────────────────────────────────────────
 async function extractWithAI(buffer, mimeType) {
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
@@ -226,13 +284,8 @@ async function extractWithAI(buffer, mimeType) {
     messages: [{
       role: 'user',
       content: [
-        {
-          type: 'image',
-          source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') }
-        },
-        {
-          type: 'text',
-          text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } },
+        { type: 'text', text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
 
 Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
 {
@@ -255,8 +308,7 @@ Rules:
 - Marital Status must be exactly one of: "Single", "Married", "Divorced", "Widowed".
 - Age should be just the number (e.g. "45").
 - Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
-- Return only the JSON, no other text.`
-        }
+- Return only the JSON, no other text.` }
       ]
     }]
   });

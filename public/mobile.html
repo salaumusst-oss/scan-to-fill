@@ -96,13 +96,6 @@
     <div class="status" id="status"></div>
   </div>
 
-  <!-- ── Error screen (shown if room is taken by another phone) ── -->
-  <div id="screen-error">
-    <div class="error-card">
-      <h2>⚠ Room in Use</h2>
-      <p id="error-msg">This room code is already connected to another phone.</p>
-    </div>
-  </div>
 
   <script>
     // Room code comes from the URL: /mobile.html?room=XXXX
@@ -122,31 +115,22 @@
 
     const sessionId = getOrCreatePhoneSession();
 
-    // Connect this phone to the room
+    // Connect this phone to the room (multiple phones allowed)
     async function connectPhone() {
       try {
-        const ua   = navigator.userAgent;
+        const ua = navigator.userAgent;
         let name = 'Phone';
-        if (/iPhone/i.test(ua))   name = 'iPhone';
-        else if (/iPad/i.test(ua)) name = 'iPad';
-        else if (/Android/i.test(ua)) name = 'Android phone';
+        if (/iPhone/i.test(ua))        name = 'iPhone';
+        else if (/iPad/i.test(ua))     name = 'iPad';
+        else if (/Android/i.test(ua))  name = 'Android phone';
 
-        const res  = await fetch('/api/connect', {
+        await fetch('/api/connect', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ room, session: sessionId, type: 'phone', name })
         });
-        const data = await res.json();
-        if (!data.ok) {
-          // Another phone is already connected to this room
-          document.getElementById('screen-scan').style.display  = 'none';
-          document.getElementById('screen-error').style.display = 'flex';
-          document.getElementById('error-msg').textContent =
-            `This room code (${room}) is already connected to another phone (${data.takenBy}). ` +
-            'Ask for a different room code, or wait for the other phone to disconnect.';
-        }
       } catch {
-        // Network error on connect — not fatal, let them scan anyway
+        // Network error — not fatal, let them scan anyway
       }
     }
 
@@ -212,8 +196,9 @@
       try { blob = await resize(file, 1800); } catch {}
 
       const form = new FormData();
-      form.append('image', blob, 'scan.jpg');
-      form.append('room',  room);
+      form.append('image',   blob, 'scan.jpg');
+      form.append('room',    room);
+      form.append('session', sessionId);
 
       try {
         const res  = await fetch('/api/upload', { method: 'POST', body: form });

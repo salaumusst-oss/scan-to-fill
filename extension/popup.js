@@ -83,7 +83,7 @@ async function loadMain(roomCode) {
       fillBtn.style.display = 'block';
       const entries = Object.entries(data.fields).filter(([, v]) => v);
       fieldsSection.innerHTML = `
-        <div class="section-label">Last scan</div>
+        <div class="section-label">Selected for filling</div>
         <div class="field-list">
           ${entries.map(([k, v]) => `
             <div class="field-item">
@@ -94,7 +94,7 @@ async function loadMain(roomCode) {
         </div>
       `;
     } else {
-      fieldsSection.innerHTML = `<p class="empty">No scan yet.<br>Scan a patient form on your phone.</p>`;
+      fieldsSection.innerHTML = `<p class="empty">No scan selected.<br>Go to the website and click a scan to send it here.</p>`;
     }
   } catch {
     dot.classList.remove('pulse');
