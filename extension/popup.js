@@ -283,7 +283,20 @@ async function fillPage() {
           return true;
         }
 
-        // ── Find a <select> by nearby label text (broad search) ──────────────
+        // ── Find a <select> by checking if its options contain ALL given hints ─
+        // Much more reliable than label-text searching.
+        function findSelectByOptions(...hints) {
+          const h = hints.map(v => v.toLowerCase());
+          for (const select of document.querySelectorAll('select')) {
+            const opts = [...select.options].map(o => o.text.trim().toLowerCase());
+            if (h.every(hint => opts.some(opt => opt.includes(hint) || hint.includes(opt)))) {
+              return select;
+            }
+          }
+          return null;
+        }
+
+        // ── Find a <select> by nearby label text (fallback) ──────────────────
         function findSelectByLabel(labelText) {
           const needle = labelText.trim().toLowerCase();
           for (const select of document.querySelectorAll('select')) {
@@ -316,20 +329,19 @@ async function fillPage() {
           if (el) { setInput(el, value); filled++; }
         }
 
-        // ── Dropdowns — expand abbreviations before matching ─────────────────
+        // ── Dropdowns — find by options first, fall back to label search ──────
         const gender  = expandGender(fields['Gender (Sex)']);
         const marital = expandMarital(fields['Marital Status']);
 
-        for (const [label, value] of [
-          ['Gender',         gender],
-          ['Marital Status', marital],
-          ['State',          'Kwara'],
-          ['Location',       'Ilorin'],
-        ]) {
-          if (!value) continue;
-          const s = findSelectByLabel(label);
-          if (s && setSelect(s, value)) filled++;
-        }
+        const genderSel  = findSelectByOptions('male', 'female')          || findSelectByLabel('Gender');
+        const maritalSel = findSelectByOptions('married', 'single')       || findSelectByLabel('Marital Status');
+        const stateSel   = findSelectByOptions('kwara')                   || findSelectByLabel('State');
+        const locSel     = findSelectByOptions('ilorin')                  || findSelectByLabel('Location');
+
+        if (genderSel  && gender  && setSelect(genderSel,  gender))   filled++;
+        if (maritalSel && marital && setSelect(maritalSel, marital))  filled++;
+        if (stateSel   && setSelect(stateSel, 'Kwara'))               filled++;
+        if (locSel     && setSelect(locSel,   'Ilorin'))              filled++;
 
         let yr = null, mo = 0, dy = 1;
         if (fields['Date of Birth']) {
