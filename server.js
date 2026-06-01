@@ -178,6 +178,17 @@ app.get('/api/user-room', (req, res) => {
   res.json({ room });
 });
 
+// ── GET /api/room-check?room=XXXX ─────────────────────────────────────────────
+// Phone uses this to validate a code and check if the laptop is online.
+app.get('/api/room-check', (req, res) => {
+  const room = (req.query.room || '').trim().toUpperCase();
+  if (!room) return res.status(400).json({ valid: false });
+  const user = Object.values(users).find(u => u.room === room);
+  if (!user) return res.json({ valid: false });
+  const r = getRoom(room);
+  res.json({ valid: true, laptopOnline: isOnline(r.laptop), ownerName: user.displayName });
+});
+
 app.get('/api/room-name', (req, res) => {
   const room  = (req.query.room || '').trim().toUpperCase();
   const entry = Object.values(users).find(u => u.room === room);
@@ -299,6 +310,11 @@ app.post('/api/scan/confirm', (req, res) => {
   if (!rawRoom || !fields) return res.status(400).json({ error: 'Missing fields' });
   const room = rawRoom.trim().toUpperCase();
   const r    = getRoom(room);
+
+  // Reject if the laptop isn't connected — no one to receive the fill
+  if (!isOnline(r.laptop)) {
+    return res.json({ ok: false, error: 'Laptop is not connected. Open the extension on the laptop first.' });
+  }
 
   // Find or create the scan entry
   let entry = r.unopened.find(s => s.id === id);

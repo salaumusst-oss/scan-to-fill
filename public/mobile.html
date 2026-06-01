@@ -14,93 +14,143 @@
       align-items: center; padding: 24px;
     }
 
+    /* ── Shared layout ── */
+    .screen {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; flex: 1; width: 100%; max-width: 420px;
+      text-align: center;
+    }
+    .screen.active { display: flex; }
+
+    .logo  { font-size: 52px; margin-bottom: 10px; }
+    h1     { font-size: 22px; font-weight: 800; color: #7eb8f7; margin-bottom: 6px; }
+    .sub   { font-size: 14px; color: #555; margin-bottom: 28px; line-height: 1.6; }
+
+    .btn {
+      display: block; width: 100%; max-width: 420px; padding: 16px;
+      border: none; border-radius: 14px; font-size: 16px; font-weight: 800;
+      cursor: pointer; transition: transform 0.1s, opacity 0.15s; margin-bottom: 10px;
+    }
+    .btn:active  { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+    .btn-green { background: #4ade80; color: #0f0f1a; }
+    .btn-blue  { background: #7eb8f7; color: #0f0f1a; }
+    .btn-gray  { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; font-size: 14px; padding: 13px; }
+
+    .status { font-size: 14px; font-weight: 600; min-height: 20px; margin-top: 10px; }
+    .status.ok   { color: #4ade80; }
+    .status.err  { color: #f87171; }
+    .status.info { color: #7eb8f7; }
+
+    /* ── Enter room code screen ── */
+    .code-input {
+      display: block; width: 100%; padding: 18px 14px;
+      background: #1a1a2e; border: 1.5px solid #2a2a45;
+      border-radius: 14px; color: #e8e8f0;
+      font-size: 28px; font-weight: 900; letter-spacing: 10px;
+      text-align: center; font-family: monospace;
+      text-transform: uppercase; margin-bottom: 14px; outline: none;
+    }
+    .code-input:focus { border-color: #7eb8f7; }
+    .code-input::placeholder { color: #333; letter-spacing: 4px; font-size: 20px; font-weight: 400; }
+
     /* ── Scan screen ── */
-    #screen-scan {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; flex: 1; width: 100%; text-align: center;
-    }
-    .logo { font-size: 52px; margin-bottom: 10px; }
-    h1 { font-size: 22px; font-weight: 800; color: #7eb8f7; margin-bottom: 6px; }
-    .sub { font-size: 14px; color: #555; margin-bottom: 6px; }
     .room-badge {
-      display: inline-block; background: #1a1a2e; border: 1px solid #2a2a45;
-      color: #7eb8f7; font-size: 13px; font-weight: 800; letter-spacing: 2px;
-      padding: 4px 12px; border-radius: 100px; margin-bottom: 32px;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1a1a2e; border: 1px solid #2a2a45;
+      color: #7eb8f7; font-size: 12px; font-weight: 800; letter-spacing: 2px;
+      padding: 5px 14px; border-radius: 100px; margin-bottom: 8px;
     }
+    .laptop-status {
+      font-size: 12px; color: #555; margin-bottom: 28px;
+      display: flex; align-items: center; gap: 5px; justify-content: center;
+    }
+    .ldot { width: 7px; height: 7px; border-radius: 50%; background: #333; }
+    .ldot.online  { background: #4ade80; }
+    .ldot.offline { background: #f87171; }
+    .laptop-offline-banner {
+      background: #2a1a1a; border: 1px solid #f87171; border-radius: 12px;
+      padding: 14px 18px; font-size: 13px; color: #f87171; line-height: 1.6;
+      margin-bottom: 20px; width: 100%;
+    }
+
     #preview {
-      width: 100%; max-width: 320px; max-height: 240px; object-fit: contain;
+      width: 100%; max-width: 320px; max-height: 220px; object-fit: contain;
       border-radius: 12px; margin-bottom: 16px; display: none;
     }
     #capture-input { display: none; }
 
     /* ── Review screen ── */
-    #screen-review {
-      display: none; flex-direction: column; width: 100%; max-width: 420px;
-      padding-top: 8px;
-    }
-    .review-header {
-      text-align: center; margin-bottom: 20px;
-    }
+    #screen-review { justify-content: flex-start; padding-top: 8px; }
+    .review-header { text-align: center; margin-bottom: 18px; }
     .review-header h2 { font-size: 20px; font-weight: 900; color: #7eb8f7; margin-bottom: 4px; }
     .review-header p  { font-size: 13px; color: #555; }
 
+    .fields-card {
+      background: #1a1a2e; border: 1px solid #2a2a45; border-radius: 14px;
+      padding: 14px 16px; width: 100%; margin-bottom: 14px;
+    }
     .field-row {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 0; border-bottom: 1px solid #1a1a2e;
+      padding: 9px 0; border-bottom: 1px solid #12122a;
     }
     .field-row:last-child { border-bottom: none; }
-    .field-label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .6px; width: 110px; flex-shrink: 0; }
+    .field-label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .6px; width: 100px; flex-shrink: 0; }
     .field-input {
       flex: 1; background: none; border: none; color: #e8e8f0;
       font-size: 15px; font-weight: 600; outline: none;
-      border-bottom: 1px solid transparent; padding: 2px 0;
-      transition: border-color 0.15s;
+      border-bottom: 1px solid transparent; padding: 2px 0; transition: border-color 0.15s;
     }
-    .field-input:focus { border-bottom-color: #7eb8f7; }
+    .field-input:focus  { border-bottom-color: #7eb8f7; }
+    .field-input.empty  { color: #444; }
     .field-input::placeholder { color: #333; font-weight: 400; }
-    .field-input.empty { color: #444; }
-
-    /* Buttons */
-    .btn {
-      display: block; width: 100%; max-width: 420px; padding: 16px;
-      border: none; border-radius: 14px; font-size: 16px; font-weight: 800;
-      cursor: pointer; transition: transform 0.1s, opacity 0.15s;
-      margin: 0 auto 10px;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.35; cursor: default; }
-    .btn-green  { background: #4ade80; color: #0f0f1a; }
-    .btn-gray   { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; font-size: 14px; padding: 13px; }
-    .btn-blue   { background: #7eb8f7; color: #0f0f1a; }
 
     /* ── Done screen ── */
-    #screen-done {
-      display: none; flex-direction: column; align-items: center;
-      justify-content: center; flex: 1; text-align: center;
-    }
-    .done-icon { font-size: 64px; margin-bottom: 16px; }
+    .done-icon  { font-size: 64px; margin-bottom: 16px; }
     .done-title { font-size: 22px; font-weight: 900; color: #4ade80; margin-bottom: 8px; }
     .done-sub   { font-size: 14px; color: #555; margin-bottom: 32px; }
-
-    .status { margin-top: 14px; font-size: 14px; font-weight: 600; min-height: 20px; text-align: center; }
-    .status.ok   { color: #4ade80; }
-    .status.err  { color: #f87171; }
-    .status.info { color: #7eb8f7; }
-
-    .fields-card {
-      background: #1a1a2e; border: 1px solid #2a2a45; border-radius: 14px;
-      padding: 16px; width: 100%; max-width: 420px; margin-bottom: 16px;
-    }
   </style>
 </head>
 <body>
 
-  <!-- ── Scan screen ── -->
-  <div id="screen-scan">
+  <!-- ── 1. Enter room code ── -->
+  <div class="screen active" id="screen-enter">
+    <div class="logo">📄</div>
+    <h1>NCNMO Scanner</h1>
+    <p class="sub">Enter your room code to connect<br>to the laptop</p>
+    <input class="code-input" id="code-input" type="text" maxlength="6"
+           placeholder="ABCD" autocomplete="off" spellcheck="false">
+    <button class="btn btn-blue" id="join-btn">Join Room →</button>
+    <div class="status" id="enter-status"></div>
+  </div>
+
+  <!-- ── 2. Laptop offline — waiting ── -->
+  <div class="screen" id="screen-inactive">
+    <div class="logo">💻</div>
+    <h1>Room Inactive</h1>
+    <p class="sub">
+      The laptop isn't connected.<br>
+      Make sure the Scan to Fill extension is<br>open and connected to room <strong id="inactive-room" style="color:#7eb8f7"></strong>.
+    </p>
+    <div class="status info" id="inactive-status">Checking every 10 seconds…</div>
+    <button class="btn btn-gray" style="margin-top:24px" id="leave-btn">← Change room code</button>
+  </div>
+
+  <!-- ── 3. Scan screen ── -->
+  <div class="screen" id="screen-scan">
     <div class="logo">📄</div>
     <h1 id="welcome-heading">NCNMO Scanner</h1>
-    <p class="sub">Scan a patient form — review and confirm on screen</p>
-    <div class="room-badge" id="room-label">Room: …</div>
+    <div class="room-badge">
+      Room: <span id="room-label">—</span>
+    </div>
+    <div class="laptop-status" id="laptop-status">
+      <div class="ldot online" id="laptop-dot"></div>
+      <span id="laptop-label">Laptop connected</span>
+    </div>
+
+    <div class="laptop-offline-banner" id="offline-banner" style="display:none">
+      ⚠ Laptop disconnected — scans will be paused until it reconnects.
+    </div>
 
     <img id="preview" alt="preview">
     <input id="capture-input" type="file" accept="image/*" capture="environment">
@@ -109,24 +159,20 @@
     <div class="status" id="scan-status"></div>
   </div>
 
-  <!-- ── Review screen ── -->
-  <div id="screen-review">
+  <!-- ── 4. Review screen ── -->
+  <div class="screen" id="screen-review" style="justify-content:flex-start;padding-top:8px">
     <div class="review-header">
       <h2>Check the details</h2>
       <p>Edit anything wrong, then confirm</p>
     </div>
-
-    <div class="fields-card" id="fields-card">
-      <!-- filled dynamically -->
-    </div>
-
+    <div class="fields-card" id="fields-card"></div>
     <button class="btn btn-green" id="confirm-btn">✓ Correct — Fill Form</button>
     <button class="btn btn-gray"  id="retake-btn">↩ Retake Photo</button>
     <div class="status" id="review-status"></div>
   </div>
 
-  <!-- ── Done screen ── -->
-  <div id="screen-done">
+  <!-- ── 5. Done screen ── -->
+  <div class="screen" id="screen-done">
     <div class="done-icon">✅</div>
     <div class="done-title">Form filled!</div>
     <div class="done-sub">The laptop is filling the form now.</div>
@@ -134,84 +180,168 @@
   </div>
 
 <script>
-  const params    = new URLSearchParams(location.search);
-  const room      = (params.get('room') || 'DEFAULT').toUpperCase();
-  document.getElementById('room-label').textContent = 'Room: ' + room;
+  // ── Room code from URL or entry screen ────────────────────────────────────
+  const urlRoom   = new URLSearchParams(location.search).get('room');
+  let room        = urlRoom ? urlRoom.toUpperCase() : null;
+  let sessionId   = null;
+  let statusTimer = null;
 
-  // Phone session — persisted per room so reconnects are recognised
-  function getOrCreateSession() {
-    const key = 'stf-phone-session-' + room;
+  const FIELD_LABELS = [
+    ['First Name','First Name'],['Last Name','Last Name'],
+    ['Gender (Sex)','Gender'],['Age','Age'],['Date of Birth','Date of Birth'],
+    ['Marital Status','Marital Status'],['Patient Phone No.','Phone No.'],
+    ['Address','Address'],['Occupation','Occupation'],
+    ['Religion','Religion'],['Next of Kin Phone','Next of Kin'],
+  ];
+
+  // ── Session ID ─────────────────────────────────────────────────────────────
+  function getSession(roomCode) {
+    const key = 'stf-phone-session-' + roomCode;
     let id = localStorage.getItem(key);
     if (!id) { id = Math.random().toString(36).substr(2, 12); localStorage.setItem(key, id); }
     return id;
   }
-  const sessionId = getOrCreateSession();
 
-  // Show owner's name
-  fetch(`/api/room-name?room=${room}`)
-    .then(r => r.json())
-    .then(d => { if (d.name) document.getElementById('welcome-heading').textContent = `Welcome, ${d.name}! 👋`; })
-    .catch(() => {});
+  // ── Screen switcher ────────────────────────────────────────────────────────
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
 
-  // Connect + heartbeat
-  async function connectPhone() {
-    const ua   = navigator.userAgent;
+  // ── Status helper ──────────────────────────────────────────────────────────
+  function setStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className   = 'status ' + (type || '');
+  }
+
+  // ── Room code entry ────────────────────────────────────────────────────────
+  const codeInput = document.getElementById('code-input');
+  codeInput.addEventListener('input', () => {
+    codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+  codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(); });
+  document.getElementById('join-btn').addEventListener('click', joinRoom);
+
+  if (room) {
+    // Came via QR code — skip entry, go straight to checking
+    initRoom(room);
+  }
+
+  async function joinRoom() {
+    const code = codeInput.value.trim().toUpperCase();
+    if (!code) { setStatus('enter-status', 'Enter a room code.', 'err'); return; }
+    const btn = document.getElementById('join-btn');
+    btn.disabled = true; btn.textContent = 'Checking…';
+    setStatus('enter-status', '', '');
+    try {
+      const res  = await fetch(`/api/room-check?room=${code}`);
+      const data = await res.json();
+      if (!data.valid) {
+        setStatus('enter-status', 'Room code not found. Ask for the correct code.', 'err');
+        btn.disabled = false; btn.textContent = 'Join Room →';
+        return;
+      }
+      room = code;
+      initRoom(room);
+    } catch {
+      setStatus('enter-status', 'Could not reach server. Try again.', 'err');
+      btn.disabled = false; btn.textContent = 'Join Room →';
+    }
+  }
+
+  // ── Init room (after code confirmed) ──────────────────────────────────────
+  async function initRoom(roomCode) {
+    sessionId = getSession(roomCode);
+    document.getElementById('room-label').textContent = roomCode;
+    document.getElementById('inactive-room').textContent = roomCode;
+
+    // Fetch owner name
+    fetch(`/api/room-name?room=${roomCode}`)
+      .then(r => r.json())
+      .then(d => { if (d.name) document.getElementById('welcome-heading').textContent = `Welcome, ${d.name}! 👋`; })
+      .catch(() => {});
+
+    // Connect this phone
+    const ua = navigator.userAgent;
     const name = /iPhone/i.test(ua) ? 'iPhone' : /iPad/i.test(ua) ? 'iPad' : /Android/i.test(ua) ? 'Android phone' : 'Phone';
     try {
       await fetch('/api/connect', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room, session: sessionId, type: 'phone', name })
+        body: JSON.stringify({ room: roomCode, session: sessionId, type: 'phone', name })
       });
     } catch {}
-  }
-  function startHeartbeat() {
+
+    // Check laptop status then decide which screen to show
+    await checkLaptopStatus(roomCode, true);
+
+    // Poll laptop status every 10s
+    clearInterval(statusTimer);
+    statusTimer = setInterval(() => checkLaptopStatus(roomCode, false), 10000);
+
+    // Heartbeat
     setInterval(async () => {
       try {
         await fetch('/api/heartbeat', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room, session: sessionId, type: 'phone' })
+          body: JSON.stringify({ room: roomCode, session: sessionId, type: 'phone' })
         });
       } catch {}
     }, 60000);
   }
-  window.addEventListener('pagehide', () => {
-    navigator.sendBeacon('/api/disconnect', new Blob(
-      [JSON.stringify({ room, session: sessionId, type: 'phone' })],
-      { type: 'application/json' }
-    ));
-  });
-  connectPhone().then(startHeartbeat);
 
-  // ── State ───────────────────────────────────────────────
-  let currentFields = {};
-  let currentScanId = null;
-  let scannerName   = 'Phone';
+  async function checkLaptopStatus(roomCode, isInit) {
+    try {
+      const res  = await fetch(`/api/room-check?room=${roomCode}`);
+      const data = await res.json();
+      const online = data.laptopOnline;
 
-  const FIELD_LABELS = [
-    ['First Name',       'First Name'],
-    ['Last Name',        'Last Name'],
-    ['Gender (Sex)',     'Gender'],
-    ['Age',              'Age'],
-    ['Date of Birth',    'Date of Birth'],
-    ['Marital Status',   'Marital Status'],
-    ['Patient Phone No.','Phone No.'],
-    ['Address',          'Address'],
-    ['Occupation',       'Occupation'],
-    ['Religion',         'Religion'],
-    ['Next of Kin Phone','Next of Kin'],
-  ];
-
-  // ── Screens ──────────────────────────────────────────────
-  function show(id) {
-    ['screen-scan','screen-review','screen-done'].forEach(s => {
-      document.getElementById(s).style.display = s === id ? 'flex' : 'none';
-    });
+      if (isInit) {
+        // First check — decide which screen to open on
+        show(online ? 'screen-scan' : 'screen-inactive');
+      } else {
+        // Ongoing poll — switch screens if status changed
+        const onScan     = document.getElementById('screen-scan').classList.contains('active');
+        const onInactive = document.getElementById('screen-inactive').classList.contains('active');
+        if (!online && onScan) {
+          // Laptop just went offline
+          show('screen-inactive');
+        } else if (online && onInactive) {
+          // Laptop came back
+          show('screen-scan');
+        }
+        // Update the inline banner on scan screen
+        const banner = document.getElementById('offline-banner');
+        const dot    = document.getElementById('laptop-dot');
+        const label  = document.getElementById('laptop-label');
+        if (online) {
+          banner.style.display = 'none';
+          dot.className = 'ldot online';
+          label.textContent = 'Laptop connected';
+          document.getElementById('scan-btn').disabled = false;
+        } else {
+          banner.style.display = 'block';
+          dot.className = 'ldot offline';
+          label.textContent = 'Laptop disconnected';
+          document.getElementById('scan-btn').disabled = true;
+        }
+      }
+    } catch {}
   }
 
-  // ── Scan flow ─────────────────────────────────────────────
+  document.getElementById('leave-btn').addEventListener('click', () => {
+    clearInterval(statusTimer);
+    room = null; sessionId = null;
+    codeInput.value = '';
+    setStatus('enter-status', '', '');
+    show('screen-enter');
+  });
+
+  // ── Scan flow ──────────────────────────────────────────────────────────────
+  let currentFields = {}, currentScanId = null, scannerName = 'Phone';
+
   const input   = document.getElementById('capture-input');
   const scanBtn = document.getElementById('scan-btn');
-
   scanBtn.addEventListener('click', () => { input.value = ''; input.click(); });
 
   input.addEventListener('change', async () => {
@@ -223,66 +353,54 @@
     preview.style.display = 'block';
 
     setStatus('scan-status', 'Reading form…', 'info');
-    scanBtn.disabled    = true;
-    scanBtn.textContent = '⏳  Reading…';
+    scanBtn.disabled = true; scanBtn.textContent = '⏳  Reading…';
 
     let blob = file;
     try { blob = await resize(file, 1800); } catch {}
 
-    const ua   = navigator.userAgent;
+    const ua = navigator.userAgent;
     scannerName = /iPhone/i.test(ua) ? 'iPhone' : /iPad/i.test(ua) ? 'iPad' : /Android/i.test(ua) ? 'Android phone' : 'Phone';
 
     const form = new FormData();
-    form.append('image',   blob, 'scan.jpg');
-    form.append('room',    room);
+    form.append('image', blob, 'scan.jpg');
+    form.append('room',  room);
     form.append('session', sessionId);
 
     try {
       const res  = await fetch('/api/upload', { method: 'POST', body: form });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Upload failed');
-
       currentFields = data.fields || {};
       currentScanId = data.id;
       showReview();
     } catch (e) {
       setStatus('scan-status', '✗ ' + e.message, 'err');
-      scanBtn.disabled    = false;
-      scanBtn.textContent = '📷  Try Again';
+      scanBtn.disabled = false; scanBtn.textContent = '📷  Take Photo';
     }
   });
 
-  // ── Review screen ─────────────────────────────────────────
+  // ── Review ─────────────────────────────────────────────────────────────────
   function showReview() {
     const card = document.getElementById('fields-card');
     card.innerHTML = FIELD_LABELS.map(([key, label]) => `
       <div class="field-row">
         <div class="field-label">${label}</div>
         <input class="field-input ${currentFields[key] ? '' : 'empty'}"
-               data-key="${key}"
-               value="${esc(currentFields[key] || '')}"
-               placeholder="—">
-      </div>
-    `).join('');
-
-    // Keep currentFields in sync as user edits
+               data-key="${key}" value="${esc(currentFields[key] || '')}" placeholder="—">
+      </div>`).join('');
     card.querySelectorAll('.field-input').forEach(inp => {
       inp.addEventListener('input', () => {
         currentFields[inp.dataset.key] = inp.value;
         inp.classList.toggle('empty', !inp.value);
       });
     });
-
-    show('screen-review');
     setStatus('review-status', '', '');
+    show('screen-review');
   }
 
   document.getElementById('confirm-btn').addEventListener('click', async () => {
     const btn = document.getElementById('confirm-btn');
-    btn.disabled    = true;
-    btn.textContent = 'Sending…';
-    setStatus('review-status', '', '');
-
+    btn.disabled = true; btn.textContent = 'Sending…';
     try {
       const res  = await fetch('/api/scan/confirm', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -293,37 +411,33 @@
       show('screen-done');
     } catch (e) {
       setStatus('review-status', '✗ ' + e.message, 'err');
-      btn.disabled    = false;
-      btn.textContent = '✓ Correct — Fill Form';
+      btn.disabled = false; btn.textContent = '✓ Correct — Fill Form';
     }
   });
 
-  document.getElementById('retake-btn').addEventListener('click', () => {
+  document.getElementById('retake-btn').addEventListener('click', resetToScan);
+  document.getElementById('next-btn').addEventListener('click', resetToScan);
+
+  function resetToScan() {
     currentFields = {}; currentScanId = null;
     document.getElementById('preview').style.display = 'none';
-    scanBtn.disabled    = false;
-    scanBtn.textContent = '📷  Take Photo';
+    scanBtn.disabled = false; scanBtn.textContent = '📷  Take Photo';
     setStatus('scan-status', '', '');
     show('screen-scan');
-  });
-
-  document.getElementById('next-btn').addEventListener('click', () => {
-    currentFields = {}; currentScanId = null;
-    document.getElementById('preview').style.display = 'none';
-    scanBtn.disabled    = false;
-    scanBtn.textContent = '📷  Take Photo';
-    setStatus('scan-status', '', '');
-    show('screen-scan');
-  });
-
-  // ── Helpers ───────────────────────────────────────────────
-  function setStatus(id, msg, type) {
-    const el = document.getElementById(id);
-    el.textContent = msg;
-    el.className   = 'status ' + type;
   }
+
+  // ── Disconnect on leave ────────────────────────────────────────────────────
+  window.addEventListener('pagehide', () => {
+    if (!room || !sessionId) return;
+    navigator.sendBeacon('/api/disconnect', new Blob(
+      [JSON.stringify({ room, session: sessionId, type: 'phone' })],
+      { type: 'application/json' }
+    ));
+  });
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
   function esc(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   function resize(file, maxW) {
     return new Promise((res, rej) => {
