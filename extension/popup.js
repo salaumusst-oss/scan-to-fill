@@ -216,6 +216,44 @@ async function init() {
     }
   });
 
+  // ── Debug: show all <select> elements on the page ────────────────────────────
+  document.getElementById('debug-btn').addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (!tab) return;
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      world: 'MAIN',
+      func: () => {
+        const selects = [...document.querySelectorAll('select')];
+        const lines = selects.length
+          ? selects.map((s, i) => {
+              const opts = [...s.options].map(o => `  "${o.text}" → val="${o.value}"`).join('\n');
+              return `── Select ${i+1} [name="${s.name}" id="${s.id}"]\n${opts || '  (no options yet)'}`;
+            }).join('\n\n')
+          : '⚠ No <select> elements found on this page.';
+
+        document.getElementById('stf-debug')?.remove();
+        const box = document.createElement('div');
+        box.id = 'stf-debug';
+        box.style.cssText = [
+          'position:fixed','top:12px','right:12px','z-index:2147483647',
+          'background:#0f0f1a','border:2px solid #7eb8f7','color:#e8e8f0',
+          'padding:16px','border-radius:14px','font-size:11px','font-family:monospace',
+          'white-space:pre','max-width:440px','max-height:82vh','overflow-y:auto',
+          'box-shadow:0 4px 32px rgba(0,0,0,.7)'
+        ].join(';');
+        box.textContent = `${selects.length} <select> elements found:\n\n${lines}`;
+        const btn = document.createElement('button');
+        btn.textContent = '✕ Close';
+        btn.style.cssText = 'display:block;margin-top:12px;background:#7eb8f7;border:none;color:#0f0f1a;padding:6px 16px;border-radius:8px;cursor:pointer;font-weight:800;font-size:12px';
+        btn.onclick = () => box.remove();
+        box.appendChild(btn);
+        document.body.appendChild(box);
+      }
+    });
+    window.close();
+  });
+
   // ── Fill / Clear ─────────────────────────────────────────────────────────────
   document.getElementById('fill-btn').addEventListener('click', fillPage);
   document.getElementById('clear-btn').addEventListener('click', clearPage);
