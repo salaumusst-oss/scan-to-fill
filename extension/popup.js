@@ -322,14 +322,15 @@ async function fillPage() {
         }
 
         // ── Find a <select> by checking if its options contain ALL given hints ─
-        // Much more reliable than label-text searching.
         function findSelectByOptions(...hints) {
           const h = hints.map(v => v.toLowerCase());
           for (const select of document.querySelectorAll('select')) {
-            const opts = [...select.options].map(o => o.text.trim().toLowerCase());
-            if (h.every(hint => opts.some(opt => opt.includes(hint) || hint.includes(opt)))) {
-              return select;
-            }
+            // skip the empty placeholder option — 'kwara'.includes('') is always true
+            const opts = [...select.options]
+              .map(o => o.text.trim().toLowerCase())
+              .filter(t => t.length > 0);
+            if (opts.length === 0) continue;
+            if (h.every(hint => opts.some(opt => opt.includes(hint)))) return select;
           }
           return null;
         }
