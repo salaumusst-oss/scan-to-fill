@@ -31,7 +31,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 const client = new Anthropic();
 
 // ── Version ────────────────────────────────────────────────────────────────────
-const EXTENSION_VERSION = '1.3.0';
+const EXTENSION_VERSION = '1.4.0';
 app.get('/api/version', (req, res) => res.json({ version: EXTENSION_VERSION }));
 
 // ── SSE: push events to website clients the instant a scan arrives ─────────────

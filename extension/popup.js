@@ -368,19 +368,24 @@ async function fillPage() {
           if (el) { setInput(el, value); filled++; }
         }
 
-        // ── Dropdowns — find by options first, fall back to label search ──────
+        // ── Dropdowns — re-find each select right before setting it ────────────
+        // React re-renders the form after each change, replacing DOM nodes.
+        // Pre-caching references fails because they go stale after the first fill.
+        // We re-query + wait 200ms between each so React has time to settle.
         const gender  = expandGender(fields['Gender (Sex)']);
         const marital = expandMarital(fields['Marital Status']);
 
-        const genderSel  = findSelectByOptions('male', 'female')          || findSelectByLabel('Gender');
-        const maritalSel = findSelectByOptions('married', 'single')       || findSelectByLabel('Marital Status');
-        const stateSel   = findSelectByOptions('kwara')                   || findSelectByLabel('State');
-        const locSel     = findSelectByOptions('ilorin')                  || findSelectByLabel('Location');
-
-        if (genderSel  && gender  && setSelect(genderSel,  gender))   filled++;
-        if (maritalSel && marital && setSelect(maritalSel, marital))  filled++;
-        if (stateSel   && setSelect(stateSel, 'Kwara'))               filled++;
-        if (locSel     && setSelect(locSel,   'Ilorin'))              filled++;
+        for (const [finder, value] of [
+          [() => findSelectByOptions('male','female')     || findSelectByLabel('Gender'),         gender],
+          [() => findSelectByOptions('married','single')  || findSelectByLabel('Marital Status'), marital],
+          [() => findSelectByOptions('kwara')             || findSelectByLabel('State'),          'Kwara'],
+          [() => findSelectByOptions('ilorin')            || findSelectByLabel('Location'),       'Ilorin'],
+        ]) {
+          if (!value) continue;
+          await new Promise(r => setTimeout(r, 200)); // let React finish re-rendering
+          const s = finder();
+          if (s && setSelect(s, value)) filled++;
+        }
 
         let yr = null, mo = 0, dy = 1;
         if (fields['Date of Birth']) {
