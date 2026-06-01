@@ -95,6 +95,158 @@ chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'scan-poll')    pollForNewScan();
 });
 
+// ── Auto-fill: triggered by content.js on the NCNMO form page ─────────────────
+// Executes in MAIN world (where React's event system lives), then navigates
+// to a fresh patient form so the next scan can be processed immediately.
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  if (msg.type !== 'auto-fill' || !sender.tab?.id) return;
+  const tabId = sender.tab.id;
+
+  chrome.scripting.executeScript({
+    target: { tabId },
+    world:  'MAIN',
+    func:   autoFillFunc,
+    args:   [msg.fields]
+  }).then(() => {
+    // Give the form a moment, then reload for the next patient
+    setTimeout(() => chrome.tabs.reload(tabId), 2000);
+  }).catch(console.error);
+});
+
+// ── Standalone fill function — runs in the page's MAIN world ───────────────────
+// Must be fully self-contained (no closures over outer variables).
+async function autoFillFunc(fields) {
+  let filled = 0;
+
+  function expandGender(v) {
+    const m = { m:'Male', f:'Female', male:'Male', female:'Female' };
+    return m[(v||'').trim().toLowerCase()] || v;
+  }
+  function expandMarital(v) {
+    const m = { m:'Married', d:'Divorced', w:'Widowed', s:'Single',
+                married:'Married', divorced:'Divorced', widowed:'Widowed', single:'Single' };
+    return m[(v||'').trim().toLowerCase()] || v;
+  }
+  function setInput(el, value) {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+    if (setter) setter.call(el, value); else el.value = value;
+    ['input','change','blur'].forEach(e => el.dispatchEvent(new Event(e, { bubbles:true })));
+  }
+  function setSelect(select, value) {
+    if (!value) return false;
+    const v   = value.trim().toLowerCase();
+    const opt = [...select.options].find(o =>
+      o.value.trim().toLowerCase() === v || o.text.trim().toLowerCase() === v ||
+      o.text.trim().toLowerCase().startsWith(v) || o.value.trim().toLowerCase().startsWith(v)
+    );
+    if (!opt) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value')?.set;
+    if (setter) setter.call(select, opt.value); else select.value = opt.value;
+    ['change','input','blur'].forEach(e => select.dispatchEvent(new Event(e, { bubbles:true })));
+    return true;
+  }
+  function findSelectByOptions(...hints) {
+    const h = hints.map(v => v.toLowerCase());
+    for (const sel of document.querySelectorAll('select')) {
+      const opts = [...sel.options].map(o => o.text.trim().toLowerCase()).filter(t => t.length > 0);
+      if (opts.length && h.every(hint => opts.some(opt => opt.includes(hint)))) return sel;
+    }
+    return null;
+  }
+  function findSelectByLabel(labelText) {
+    const needle = labelText.trim().toLowerCase();
+    for (const sel of document.querySelectorAll('select')) {
+      let node = sel;
+      for (let i = 0; i < 10; i++) {
+        node = node.parentElement;
+        if (!node) break;
+        for (const el of node.querySelectorAll('label,p,span,div,h6,legend,th,td')) {
+          if (el.contains(sel)) continue;
+          const t = el.textContent.trim().toLowerCase().replace(/[*:]/g,'');
+          if (t === needle || t.startsWith(needle) || t.includes(needle)) return sel;
+        }
+      }
+    }
+    return null;
+  }
+
+  // Text inputs
+  for (const [name, value] of [
+    ['first_name',        fields['First Name']],
+    ['last_name',         fields['Last Name']],
+    ['phone_number',      fields['Patient Phone No.']],
+    ['address',           fields['Address']],
+    ['occupation',        fields['Occupation']],
+    ['religion',          fields['Religion']],
+    ['next_of_kin_phone', fields['Next of Kin Phone']],
+  ]) {
+    if (!value) continue;
+    const el = document.querySelector(`input[name="${name}"]`);
+    if (el) { setInput(el, value); filled++; }
+  }
+
+  // Dropdowns — re-find after each React re-render
+  const gender  = expandGender(fields['Gender (Sex)']);
+  const marital = expandMarital(fields['Marital Status']);
+
+  for (const [finder, value] of [
+    [() => findSelectByOptions('male','female')    || findSelectByLabel('Gender'),         gender],
+    [() => findSelectByOptions('married','single') || findSelectByLabel('Marital Status'), marital],
+    [() => findSelectByOptions('kwara')            || findSelectByLabel('State'),          'Kwara'],
+    [() => findSelectByOptions('ilorin')           || findSelectByLabel('Location'),       'Ilorin'],
+  ]) {
+    if (!value) continue;
+    await new Promise(r => setTimeout(r, 200));
+    const s = finder();
+    if (s && setSelect(s, value)) filled++;
+  }
+
+  // Date of Birth picker
+  let yr = null, mo = 0, dy = 1;
+  if (fields['Date of Birth']) {
+    const d = new Date(fields['Date of Birth']);
+    if (!isNaN(d)) { yr = d.getFullYear(); mo = d.getMonth(); dy = d.getDate(); }
+  } else if (parseInt(fields['Age']) > 0) {
+    yr = new Date().getFullYear() - parseInt(fields['Age']);
+  }
+  if (yr) {
+    const dateBtn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Pick a date');
+    if (dateBtn) {
+      dateBtn.click();
+      await new Promise(r => setTimeout(r, 400));
+      const allSel = [...document.querySelectorAll('select')];
+      const mSel = allSel.find(s => s.options[0]?.value === '0' && s.options.length === 12);
+      const ySel = allSel.find(s => s.options.length > 50 && !isNaN(s.options[0]?.value));
+      if (mSel && ySel) {
+        const ss = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value')?.set;
+        if (ss) ss.call(mSel, String(mo)); else mSel.value = String(mo);
+        mSel.dispatchEvent(new Event('change', { bubbles:true }));
+        if (ss) ss.call(ySel, String(yr)); else ySel.value = String(yr);
+        ySel.dispatchEvent(new Event('change', { bubbles:true }));
+        await new Promise(r => setTimeout(r, 300));
+        const dayBtn = [...document.querySelectorAll('button')].find(b =>
+          b.textContent.trim() === String(dy) && !b.disabled && !b.className.includes('outside')
+        );
+        if (dayBtn) { dayBtn.click(); filled++; }
+      }
+    }
+  }
+
+  // Toast
+  document.getElementById('stf-toast')?.remove();
+  const t = document.createElement('div');
+  t.id = 'stf-toast';
+  t.textContent = `✓ Filled ${filled} fields — loading next patient…`;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'24px', right:'24px', zIndex:'2147483647',
+    background:'#1e3a2a', border:'1.5px solid #4ade80', color:'#4ade80',
+    padding:'12px 20px', borderRadius:'100px',
+    fontSize:'14px', fontWeight:'700', fontFamily:'system-ui,sans-serif',
+    boxShadow:'0 4px 24px rgba(0,0,0,.3)', pointerEvents:'none',
+  });
+  document.body.appendChild(t);
+}
+
 // ── Startup ────────────────────────────────────────────────────────────────────
 getOrCreateSession();
 checkServer();

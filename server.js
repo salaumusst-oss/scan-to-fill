@@ -32,7 +32,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 const client = new Anthropic();
 
 // ── Version ────────────────────────────────────────────────────────────────────
-const EXTENSION_VERSION = '1.4.0';
+const EXTENSION_VERSION = '1.5.0';
 app.get('/api/version', (req, res) => res.json({ version: EXTENSION_VERSION }));
 
 // ── SSE: push events to website clients the instant a scan arrives ─────────────
@@ -289,6 +289,44 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     console.error(`[${room}] AI error:`, err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── POST /api/scan/confirm — phone confirms (possibly edited) fields ───────────
+// Stores a pendingFill that the NCNMO-page content script will pick up and
+// execute automatically. The fill is consumed on first read (atomic clear).
+app.post('/api/scan/confirm', (req, res) => {
+  const { room: rawRoom, id, fields, scannerName } = req.body;
+  if (!rawRoom || !fields) return res.status(400).json({ error: 'Missing fields' });
+  const room = rawRoom.trim().toUpperCase();
+  const r    = getRoom(room);
+
+  // Find or create the scan entry
+  let entry = r.unopened.find(s => s.id === id);
+  if (entry) {
+    entry.fields = fields; // apply any edits the user made
+    r.unopened = r.unopened.filter(s => s.id !== id);
+  } else {
+    entry = { id: id || makeScanId(), fields, timestamp: Date.now(), scannerName: scannerName || 'Phone' };
+  }
+  entry.confirmedAt = Date.now();
+
+  r.opened.unshift(entry);
+  if (r.opened.length > 50) r.opened = r.opened.slice(0, 50);
+  r.selected    = entry;
+  r.pendingFill = { fields, timestamp: Date.now(), id: entry.id };
+
+  scheduleSave();
+  sseNotify(room, 'new-scan', { unopened: r.unopened, opened: r.opened, selected: r.selected });
+  res.json({ ok: true });
+});
+
+// ── GET /api/pending-fill?room=XXXX — consumed atomically (clears on read) ────
+app.get('/api/pending-fill', (req, res) => {
+  const room = (req.query.room || '').trim().toUpperCase();
+  const r    = getRoom(room);
+  const fill = r.pendingFill || null;
+  if (fill) { r.pendingFill = null; scheduleSave(); }
+  res.json(fill || { fields: null });
 });
 
 // ── GET /api/scans?room=XXXX ──────────────────────────────────────────────────

@@ -9,73 +9,88 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0f0f1a;
-      color: #e8e8f0;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      text-align: center;
+      background: #0f0f1a; color: #e8e8f0;
+      min-height: 100dvh; display: flex; flex-direction: column;
+      align-items: center; padding: 24px;
     }
-    .logo { font-size: 56px; margin-bottom: 12px; }
+
+    /* ── Scan screen ── */
+    #screen-scan {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; flex: 1; width: 100%; text-align: center;
+    }
+    .logo { font-size: 52px; margin-bottom: 10px; }
     h1 { font-size: 22px; font-weight: 800; color: #7eb8f7; margin-bottom: 6px; }
     .sub { font-size: 14px; color: #555; margin-bottom: 6px; }
     .room-badge {
-      display: inline-block;
-      background: #1a1a2e;
-      border: 1px solid #2a2a45;
-      color: #7eb8f7;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      padding: 4px 12px;
-      border-radius: 100px;
-      margin-bottom: 36px;
+      display: inline-block; background: #1a1a2e; border: 1px solid #2a2a45;
+      color: #7eb8f7; font-size: 13px; font-weight: 800; letter-spacing: 2px;
+      padding: 4px 12px; border-radius: 100px; margin-bottom: 32px;
     }
-
-    .btn {
-      display: block;
-      width: 100%;
-      max-width: 320px;
-      padding: 18px;
-      border: none;
-      border-radius: 16px;
-      font-size: 17px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.1s, opacity 0.15s;
-      margin: 0 auto 12px;
-    }
-    .btn:active { transform: scale(0.96); }
-    .btn:disabled { opacity: 0.35; cursor: default; }
-    .btn-blue { background: #7eb8f7; color: #0f0f1a; }
-    .btn-gray { background: #1a1a2e; color: #555; border: 1px solid #2a2a45; font-size: 14px; padding: 14px; }
-
     #preview {
-      width: 100%; max-width: 320px; max-height: 280px;
-      object-fit: contain; border-radius: 12px;
-      margin-bottom: 20px; display: none;
+      width: 100%; max-width: 320px; max-height: 240px; object-fit: contain;
+      border-radius: 12px; margin-bottom: 16px; display: none;
     }
-    .status { margin-top: 16px; font-size: 15px; font-weight: 600; min-height: 24px; }
+    #capture-input { display: none; }
+
+    /* ── Review screen ── */
+    #screen-review {
+      display: none; flex-direction: column; width: 100%; max-width: 420px;
+      padding-top: 8px;
+    }
+    .review-header {
+      text-align: center; margin-bottom: 20px;
+    }
+    .review-header h2 { font-size: 20px; font-weight: 900; color: #7eb8f7; margin-bottom: 4px; }
+    .review-header p  { font-size: 13px; color: #555; }
+
+    .field-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid #1a1a2e;
+    }
+    .field-row:last-child { border-bottom: none; }
+    .field-label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .6px; width: 110px; flex-shrink: 0; }
+    .field-input {
+      flex: 1; background: none; border: none; color: #e8e8f0;
+      font-size: 15px; font-weight: 600; outline: none;
+      border-bottom: 1px solid transparent; padding: 2px 0;
+      transition: border-color 0.15s;
+    }
+    .field-input:focus { border-bottom-color: #7eb8f7; }
+    .field-input::placeholder { color: #333; font-weight: 400; }
+    .field-input.empty { color: #444; }
+
+    /* Buttons */
+    .btn {
+      display: block; width: 100%; max-width: 420px; padding: 16px;
+      border: none; border-radius: 14px; font-size: 16px; font-weight: 800;
+      cursor: pointer; transition: transform 0.1s, opacity 0.15s;
+      margin: 0 auto 10px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+    .btn-green  { background: #4ade80; color: #0f0f1a; }
+    .btn-gray   { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; font-size: 14px; padding: 13px; }
+    .btn-blue   { background: #7eb8f7; color: #0f0f1a; }
+
+    /* ── Done screen ── */
+    #screen-done {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; flex: 1; text-align: center;
+    }
+    .done-icon { font-size: 64px; margin-bottom: 16px; }
+    .done-title { font-size: 22px; font-weight: 900; color: #4ade80; margin-bottom: 8px; }
+    .done-sub   { font-size: 14px; color: #555; margin-bottom: 32px; }
+
+    .status { margin-top: 14px; font-size: 14px; font-weight: 600; min-height: 20px; text-align: center; }
     .status.ok   { color: #4ade80; }
     .status.err  { color: #f87171; }
     .status.info { color: #7eb8f7; }
-    #capture-input { display: none; }
 
-    /* Error screen */
-    #screen-error { display: none; }
-    .error-card {
-      background: #1a1a2e;
-      border: 1px solid #3a2020;
-      border-radius: 16px;
-      padding: 32px 24px;
-      max-width: 320px;
-      width: 100%;
+    .fields-card {
+      background: #1a1a2e; border: 1px solid #2a2a45; border-radius: 14px;
+      padding: 16px; width: 100%; max-width: 420px; margin-bottom: 16px;
     }
-    .error-card h2 { font-size: 18px; color: #f87171; margin-bottom: 10px; }
-    .error-card p  { font-size: 14px; color: #888; line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -84,155 +99,246 @@
   <div id="screen-scan">
     <div class="logo">📄</div>
     <h1 id="welcome-heading">NCNMO Scanner</h1>
-    <p class="sub">Scan a patient form — it will appear on the laptop</p>
+    <p class="sub">Scan a patient form — review and confirm on screen</p>
     <div class="room-badge" id="room-label">Room: …</div>
 
     <img id="preview" alt="preview">
     <input id="capture-input" type="file" accept="image/*" capture="environment">
 
-    <button class="btn btn-blue" id="main-btn">📷  Take Photo</button>
-    <button class="btn btn-gray" id="retake-btn" style="display:none">Retake</button>
-
-    <div class="status" id="status"></div>
+    <button class="btn btn-blue" id="scan-btn">📷  Take Photo</button>
+    <div class="status" id="scan-status"></div>
   </div>
 
+  <!-- ── Review screen ── -->
+  <div id="screen-review">
+    <div class="review-header">
+      <h2>Check the details</h2>
+      <p>Edit anything wrong, then confirm</p>
+    </div>
 
-  <script>
-    // Room code comes from the URL: /mobile.html?room=XXXX
-    const params = new URLSearchParams(location.search);
-    const room   = (params.get('room') || 'DEFAULT').toUpperCase();
-    document.getElementById('room-label').textContent = 'Room: ' + room;
+    <div class="fields-card" id="fields-card">
+      <!-- filled dynamically -->
+    </div>
 
-    // Phone session ID — persisted in localStorage so reconnects are recognized
-    function getOrCreatePhoneSession() {
-      let id = localStorage.getItem('stf-phone-session-' + room);
-      if (!id) {
-        id = Math.random().toString(36).substr(2, 12);
-        localStorage.setItem('stf-phone-session-' + room, id);
-      }
-      return id;
-    }
+    <button class="btn btn-green" id="confirm-btn">✓ Correct — Fill Form</button>
+    <button class="btn btn-gray"  id="retake-btn">↩ Retake Photo</button>
+    <div class="status" id="review-status"></div>
+  </div>
 
-    const sessionId = getOrCreatePhoneSession();
+  <!-- ── Done screen ── -->
+  <div id="screen-done">
+    <div class="done-icon">✅</div>
+    <div class="done-title">Form filled!</div>
+    <div class="done-sub">The laptop is filling the form now.</div>
+    <button class="btn btn-blue" id="next-btn">📷 Scan Next Patient</button>
+  </div>
 
-    // Connect this phone to the room (multiple phones allowed)
-    async function connectPhone() {
-      try {
-        const ua = navigator.userAgent;
-        let name = 'Phone';
-        if (/iPhone/i.test(ua))        name = 'iPhone';
-        else if (/iPad/i.test(ua))     name = 'iPad';
-        else if (/Android/i.test(ua))  name = 'Android phone';
+<script>
+  const params    = new URLSearchParams(location.search);
+  const room      = (params.get('room') || 'DEFAULT').toUpperCase();
+  document.getElementById('room-label').textContent = 'Room: ' + room;
 
-        await fetch('/api/connect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room, session: sessionId, type: 'phone', name })
-        });
-      } catch {
-        // Network error — not fatal, let them scan anyway
-      }
-    }
+  // Phone session — persisted per room so reconnects are recognised
+  function getOrCreateSession() {
+    const key = 'stf-phone-session-' + room;
+    let id = localStorage.getItem(key);
+    if (!id) { id = Math.random().toString(36).substr(2, 12); localStorage.setItem(key, id); }
+    return id;
+  }
+  const sessionId = getOrCreateSession();
 
-    // Heartbeat — keep this phone "online" every 60 s
-    function startHeartbeat() {
-      setInterval(async () => {
-        try {
-          await fetch('/api/heartbeat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ room, session: sessionId, type: 'phone' })
-          });
-        } catch {}
-      }, 60000);
-    }
+  // Show owner's name
+  fetch(`/api/room-name?room=${room}`)
+    .then(r => r.json())
+    .then(d => { if (d.name) document.getElementById('welcome-heading').textContent = `Welcome, ${d.name}! 👋`; })
+    .catch(() => {});
 
-    connectPhone().then(startHeartbeat);
-
-    // Show the name of whoever owns this room code
-    fetch(`/api/room-name?room=${room}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.name) {
-          document.getElementById('welcome-heading').textContent = `Welcome, ${data.name}! 👋`;
-        }
-      })
-      .catch(() => {});
-
-    // Go offline immediately when the user leaves the page
-    window.addEventListener('pagehide', () => {
-      const payload = JSON.stringify({ room, session: sessionId, type: 'phone' });
-      navigator.sendBeacon('/api/disconnect', new Blob([payload], { type: 'application/json' }));
-    });
-
-    // ── Camera / upload ──────────────────────────────────────────────────────
-    const input     = document.getElementById('capture-input');
-    const mainBtn   = document.getElementById('main-btn');
-    const retakeBtn = document.getElementById('retake-btn');
-    const preview   = document.getElementById('preview');
-    const status    = document.getElementById('status');
-
-    mainBtn.addEventListener('click', capture);
-    retakeBtn.addEventListener('click', capture);
-
-    function capture() {
-      input.value = '';
-      input.click();
-    }
-
-    input.addEventListener('change', async () => {
-      const file = input.files[0];
-      if (!file) return;
-
-      preview.src = URL.createObjectURL(file);
-      preview.style.display = 'block';
-      retakeBtn.style.display = 'block';
-
-      setStatus('Uploading & reading text…', 'info');
-      mainBtn.disabled    = true;
-      mainBtn.textContent = '⏳  Processing…';
-
-      let blob = file;
-      try { blob = await resize(file, 1800); } catch {}
-
-      const form = new FormData();
-      form.append('image',   blob, 'scan.jpg');
-      form.append('room',    room);
-      form.append('session', sessionId);
-
-      try {
-        const res  = await fetch('/api/upload', { method: 'POST', body: form });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || 'Upload failed');
-        setStatus('✓ Done! Check the laptop.', 'ok');
-        mainBtn.textContent = '📷  Scan Another';
-      } catch (e) {
-        setStatus('✗ ' + e.message, 'err');
-        mainBtn.textContent = '📷  Try Again';
-      } finally {
-        mainBtn.disabled = false;
-      }
-    });
-
-    function resize(file, maxW) {
-      return new Promise((res, rej) => {
-        const img = new Image();
-        img.onload = () => {
-          const s = Math.min(1, maxW / img.width);
-          const c = document.createElement('canvas');
-          c.width = img.width * s; c.height = img.height * s;
-          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-          c.toBlob(b => b ? res(b) : rej(), 'image/jpeg', 0.88);
-        };
-        img.onerror = rej;
-        img.src = URL.createObjectURL(file);
+  // Connect + heartbeat
+  async function connectPhone() {
+    const ua   = navigator.userAgent;
+    const name = /iPhone/i.test(ua) ? 'iPhone' : /iPad/i.test(ua) ? 'iPad' : /Android/i.test(ua) ? 'Android phone' : 'Phone';
+    try {
+      await fetch('/api/connect', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room, session: sessionId, type: 'phone', name })
       });
-    }
+    } catch {}
+  }
+  function startHeartbeat() {
+    setInterval(async () => {
+      try {
+        await fetch('/api/heartbeat', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room, session: sessionId, type: 'phone' })
+        });
+      } catch {}
+    }, 60000);
+  }
+  window.addEventListener('pagehide', () => {
+    navigator.sendBeacon('/api/disconnect', new Blob(
+      [JSON.stringify({ room, session: sessionId, type: 'phone' })],
+      { type: 'application/json' }
+    ));
+  });
+  connectPhone().then(startHeartbeat);
 
-    function setStatus(msg, type) {
-      status.textContent = msg;
-      status.className   = 'status ' + type;
+  // ── State ───────────────────────────────────────────────
+  let currentFields = {};
+  let currentScanId = null;
+  let scannerName   = 'Phone';
+
+  const FIELD_LABELS = [
+    ['First Name',       'First Name'],
+    ['Last Name',        'Last Name'],
+    ['Gender (Sex)',     'Gender'],
+    ['Age',              'Age'],
+    ['Date of Birth',    'Date of Birth'],
+    ['Marital Status',   'Marital Status'],
+    ['Patient Phone No.','Phone No.'],
+    ['Address',          'Address'],
+    ['Occupation',       'Occupation'],
+    ['Religion',         'Religion'],
+    ['Next of Kin Phone','Next of Kin'],
+  ];
+
+  // ── Screens ──────────────────────────────────────────────
+  function show(id) {
+    ['screen-scan','screen-review','screen-done'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? 'flex' : 'none';
+    });
+  }
+
+  // ── Scan flow ─────────────────────────────────────────────
+  const input   = document.getElementById('capture-input');
+  const scanBtn = document.getElementById('scan-btn');
+
+  scanBtn.addEventListener('click', () => { input.value = ''; input.click(); });
+
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const preview = document.getElementById('preview');
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+
+    setStatus('scan-status', 'Reading form…', 'info');
+    scanBtn.disabled    = true;
+    scanBtn.textContent = '⏳  Reading…';
+
+    let blob = file;
+    try { blob = await resize(file, 1800); } catch {}
+
+    const ua   = navigator.userAgent;
+    scannerName = /iPhone/i.test(ua) ? 'iPhone' : /iPad/i.test(ua) ? 'iPad' : /Android/i.test(ua) ? 'Android phone' : 'Phone';
+
+    const form = new FormData();
+    form.append('image',   blob, 'scan.jpg');
+    form.append('room',    room);
+    form.append('session', sessionId);
+
+    try {
+      const res  = await fetch('/api/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Upload failed');
+
+      currentFields = data.fields || {};
+      currentScanId = data.id;
+      showReview();
+    } catch (e) {
+      setStatus('scan-status', '✗ ' + e.message, 'err');
+      scanBtn.disabled    = false;
+      scanBtn.textContent = '📷  Try Again';
     }
-  </script>
+  });
+
+  // ── Review screen ─────────────────────────────────────────
+  function showReview() {
+    const card = document.getElementById('fields-card');
+    card.innerHTML = FIELD_LABELS.map(([key, label]) => `
+      <div class="field-row">
+        <div class="field-label">${label}</div>
+        <input class="field-input ${currentFields[key] ? '' : 'empty'}"
+               data-key="${key}"
+               value="${esc(currentFields[key] || '')}"
+               placeholder="—">
+      </div>
+    `).join('');
+
+    // Keep currentFields in sync as user edits
+    card.querySelectorAll('.field-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        currentFields[inp.dataset.key] = inp.value;
+        inp.classList.toggle('empty', !inp.value);
+      });
+    });
+
+    show('screen-review');
+    setStatus('review-status', '', '');
+  }
+
+  document.getElementById('confirm-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('confirm-btn');
+    btn.disabled    = true;
+    btn.textContent = 'Sending…';
+    setStatus('review-status', '', '');
+
+    try {
+      const res  = await fetch('/api/scan/confirm', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room, id: currentScanId, fields: currentFields, scannerName })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Failed');
+      show('screen-done');
+    } catch (e) {
+      setStatus('review-status', '✗ ' + e.message, 'err');
+      btn.disabled    = false;
+      btn.textContent = '✓ Correct — Fill Form';
+    }
+  });
+
+  document.getElementById('retake-btn').addEventListener('click', () => {
+    currentFields = {}; currentScanId = null;
+    document.getElementById('preview').style.display = 'none';
+    scanBtn.disabled    = false;
+    scanBtn.textContent = '📷  Take Photo';
+    setStatus('scan-status', '', '');
+    show('screen-scan');
+  });
+
+  document.getElementById('next-btn').addEventListener('click', () => {
+    currentFields = {}; currentScanId = null;
+    document.getElementById('preview').style.display = 'none';
+    scanBtn.disabled    = false;
+    scanBtn.textContent = '📷  Take Photo';
+    setStatus('scan-status', '', '');
+    show('screen-scan');
+  });
+
+  // ── Helpers ───────────────────────────────────────────────
+  function setStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className   = 'status ' + type;
+  }
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function resize(file, maxW) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, maxW / img.width);
+        const c = document.createElement('canvas');
+        c.width = img.width * s; c.height = img.height * s;
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(b => b ? res(b) : rej(), 'image/jpeg', 0.88);
+      };
+      img.onerror = rej;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+</script>
 </body>
 </html>
