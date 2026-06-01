@@ -246,41 +246,69 @@ async function fillPage() {
       func: async (fields) => {
         let filled = 0;
 
+        // ── Expand single-letter abbreviations written on the paper form ────
+        function expandGender(v) {
+          const map = { m: 'Male', f: 'Female', male: 'Male', female: 'Female' };
+          return map[(v || '').trim().toLowerCase()] || v;
+        }
+        function expandMarital(v) {
+          const map = {
+            m: 'Married', d: 'Divorced', w: 'Widowed', s: 'Single',
+            married: 'Married', divorced: 'Divorced', widowed: 'Widowed', single: 'Single'
+          };
+          return map[(v || '').trim().toLowerCase()] || v;
+        }
+
+        // ── Set a text input (React-safe) ────────────────────────────────────
         function setInput(el, value) {
           const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
           if (setter) setter.call(el, value); else el.value = value;
-          el.dispatchEvent(new Event('input',  { bubbles: true }));
-          el.dispatchEvent(new Event('change', { bubbles: true }));
-          el.dispatchEvent(new Event('blur',   { bubbles: true }));
+          ['input', 'change', 'blur'].forEach(e => el.dispatchEvent(new Event(e, { bubbles: true })));
         }
+
+        // ── Set a <select> — tries exact, then prefix match ──────────────────
         function setSelect(select, value) {
+          if (!value) return false;
+          const v = value.trim().toLowerCase();
           const opt = [...select.options].find(o =>
-            o.value.toLowerCase() === value.toLowerCase() || o.text.toLowerCase() === value.toLowerCase()
+            o.value.trim().toLowerCase() === v ||
+            o.text.trim().toLowerCase()  === v ||
+            o.text.trim().toLowerCase().startsWith(v) ||
+            o.value.trim().toLowerCase().startsWith(v)
           );
           if (!opt) return false;
           const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value')?.set;
           if (setter) setter.call(select, opt.value); else select.value = opt.value;
-          select.dispatchEvent(new Event('change', { bubbles: true }));
+          ['change', 'input', 'blur'].forEach(e => select.dispatchEvent(new Event(e, { bubbles: true })));
           return true;
         }
+
+        // ── Find a <select> by nearby label text (broad search) ──────────────
         function findSelectByLabel(labelText) {
+          const needle = labelText.trim().toLowerCase();
           for (const select of document.querySelectorAll('select')) {
             let node = select;
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 10; i++) {
               node = node.parentElement;
               if (!node) break;
-              for (const el of node.querySelectorAll('label, p, span')) {
-                if (!el.children.length && el.textContent.trim().toLowerCase() === labelText.toLowerCase()) return select;
+              for (const el of node.querySelectorAll('label, p, span, div, h6, legend, th, td')) {
+                if (el.contains(select)) continue;
+                const t = el.textContent.trim().toLowerCase().replace(/[*:]/g, '');
+                if (t === needle || t.startsWith(needle) || t.includes(needle)) return select;
               }
             }
           }
           return null;
         }
 
+        // ── Text inputs ──────────────────────────────────────────────────────
         for (const [name, value] of [
-          ['first_name', fields['First Name']], ['last_name', fields['Last Name']],
-          ['phone_number', fields['Patient Phone No.']], ['address', fields['Address']],
-          ['occupation', fields['Occupation']], ['religion', fields['Religion']],
+          ['first_name',        fields['First Name']],
+          ['last_name',         fields['Last Name']],
+          ['phone_number',      fields['Patient Phone No.']],
+          ['address',           fields['Address']],
+          ['occupation',        fields['Occupation']],
+          ['religion',          fields['Religion']],
           ['next_of_kin_phone', fields['Next of Kin Phone']],
         ]) {
           if (!value) continue;
@@ -288,16 +316,20 @@ async function fillPage() {
           if (el) { setInput(el, value); filled++; }
         }
 
-        for (const [label, value] of [['Gender', fields['Gender (Sex)']], ['Marital Status', fields['Marital Status']]]) {
+        // ── Dropdowns — expand abbreviations before matching ─────────────────
+        const gender  = expandGender(fields['Gender (Sex)']);
+        const marital = expandMarital(fields['Marital Status']);
+
+        for (const [label, value] of [
+          ['Gender',         gender],
+          ['Marital Status', marital],
+          ['State',          'Kwara'],
+          ['Location',       'Ilorin'],
+        ]) {
           if (!value) continue;
           const s = findSelectByLabel(label);
           if (s && setSelect(s, value)) filled++;
         }
-
-        const stateS = findSelectByLabel('State');
-        if (stateS && setSelect(stateS, 'Kwara')) filled++;
-        const locS = findSelectByLabel('Location');
-        if (locS && setSelect(locS, 'Ilorin')) filled++;
 
         let yr = null, mo = 0, dy = 1;
         if (fields['Date of Birth']) {

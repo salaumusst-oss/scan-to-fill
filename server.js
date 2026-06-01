@@ -304,8 +304,8 @@ Return ONLY a JSON object with these exact keys — use empty string "" if a fie
 
 Rules:
 - The "Name" line is a full name — split into First Name and Last Name on the first space. If one word, put it all in First Name.
-- Gender must be exactly "Male" or "Female" (capitalised).
-- Marital Status must be exactly one of: "Single", "Married", "Divorced", "Widowed".
+- Gender: the form may say "M" or "F" or write it in full. Always return exactly "Male" or "Female".
+- Marital Status: the form may use abbreviations — "M" or "Married", "D" or "Divorced", "W" or "Widowed", "S" or "Single". Always return the full word: "Married", "Divorced", "Widowed", or "Single".
 - Age should be just the number (e.g. "45").
 - Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
 - Return only the JSON, no other text.` }
