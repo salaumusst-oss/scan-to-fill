@@ -4,584 +4,542 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scan to Fill — NCNMO Medical Mission</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    /* ── NCNMO Color Palette ── */
     :root {
-      --green-dark:   #1b5e20;
-      --green-mid:    #2e7d32;
-      --green-bright: #388e3c;
-      --green-light:  #4caf50;
-      --green-pale:   #e8f5e9;
-      --green-tint:   #f1f8f2;
-      --gold:         #f9a825;
-      --gold-light:   #fff8e1;
-      --red:          #c62828;
-      --white:        #ffffff;
-      --gray-100:     #f5f5f5;
-      --gray-200:     #eeeeee;
-      --gray-400:     #bdbdbd;
-      --gray-600:     #757575;
-      --gray-800:     #424242;
-      --text:         #1a1a1a;
-      --shadow:       0 2px 12px rgba(27,94,32,.10);
-      --shadow-lg:    0 4px 28px rgba(27,94,32,.15);
+      --g1: #051209;
+      --g2: #0c2611;
+      --g3: #1b5e20;
+      --g4: #2e7d32;
+      --g5: #388e3c;
+      --g6: #43a047;
+      --g7: #66bb6a;
+      --g8: #a5d6a7;
+      --g9: #e8f5e9;
+      --gold:    #c8930a;
+      --gold-lt: #f9a825;
+      --gold-bg: #fffbf0;
+      --body:    #f0f4f0;
+      --white:   #ffffff;
+      --text:    #0a1f0c;
+      --text2:   #3d6b42;
+      --text3:   #7a9e7e;
+      --border:  rgba(0,0,0,.08);
+      --sh1: 0 1px 6px rgba(0,0,0,.06);
+      --sh2: 0 4px 20px rgba(0,0,0,.10);
+      --sh3: 0 8px 48px rgba(0,0,0,.18);
     }
 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--gray-100);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--body);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Nav ── */
+    /* ══════════════════════════════════════════
+       NAV
+    ══════════════════════════════════════════ */
     nav {
-      background: var(--green-dark);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 28px;
-      height: 64px;
+      position: sticky; top: 0; z-index: 200;
+      height: 58px;
+      background: var(--g1);
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      display: flex; align-items: center;
+      padding: 0 22px; gap: 14px;
       flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(0,0,0,.2);
-      position: sticky;
-      top: 0;
-      z-index: 100;
     }
-
-    .nav-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-    }
-    .nav-logo-img {
-      height: 46px;
-      width: auto;
-      display: block;
-      /* Use the real NCNMO logo */
-      object-fit: contain;
-    }
-    .nav-brand-text {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.2;
-    }
-    .nav-brand-title {
-      font-size: 14px;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: .3px;
-    }
-    .nav-brand-sub {
-      font-size: 10px;
-      color: rgba(255,255,255,.65);
-      letter-spacing: .5px;
-      text-transform: uppercase;
-    }
-
-    .nav-right { display: flex; align-items: center; gap: 14px; }
-    .dot-wrap  {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; color: rgba(255,255,255,.6);
-    }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.25); }
-    .dot.ok { background: #69f0ae; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; flex: 1; }
+    .nav-logo  { height: 36px; width: auto; object-fit: contain; }
+    .nav-title-main { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .nav-title-sub  { font-size: 10px; color: rgba(255,255,255,.38); text-transform: uppercase; letter-spacing: .8px; }
+    .nav-sep { width: 1px; height: 26px; background: rgba(255,255,255,.09); }
+    .nav-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255,255,255,.4); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.18); flex-shrink: 0; }
+    .dot.ok { background: #69f0ae; box-shadow: 0 0 6px rgba(105,240,174,.55); }
     #logout-btn {
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.25);
-      color: rgba(255,255,255,.8);
-      padding: 6px 16px;
-      border-radius: 8px;
-      font-size: 12px;
-      cursor: pointer;
       display: none;
-      transition: background .15s;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.11);
+      color: rgba(255,255,255,.55); padding: 5px 14px; border-radius: 6px;
+      font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer;
+      transition: all .18s;
     }
-    #logout-btn:hover { background: rgba(255,255,255,.22); color: #fff; }
+    #logout-btn:hover { background: rgba(255,255,255,.13); color: #fff; }
 
-    /* ── Screens ── */
-    .screen { flex: 1; display: none; align-items: flex-start; justify-content: center; padding: 48px 24px; }
+    /* ══════════════════════════════════════════
+       SCREENS
+    ══════════════════════════════════════════ */
+    .screen { flex: 1; display: none; }
     .screen.active { display: flex; }
 
-    /* ── Login ── */
-    .login-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 28px;
-      max-width: 440px;
-      width: 100%;
+    /* ══════════════════════════════════════════
+       LOGIN
+    ══════════════════════════════════════════ */
+    #screen-login {
+      position: relative; overflow: hidden;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 48px 20px 64px;
+      /* Deep forest green with radial highlights */
+      background:
+        radial-gradient(ellipse at 12% 88%, rgba(67,160,71,.2)  0%, transparent 52%),
+        radial-gradient(ellipse at 88% 12%, rgba(200,147,10,.09) 0%, transparent 50%),
+        linear-gradient(148deg, #051209 0%, #0c2611 45%, #0d3318 100%);
+    }
+    /* Tiled diamond-lattice pattern */
+    #screen-login::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M30 2L58 30L30 58L2 30Z' fill='none' stroke='rgba(255,255,255,0.055)' stroke-width='1'/%3E%3C/svg%3E");
+      background-size: 60px 60px;
+    }
+    /* Ambient glow top-right */
+    #screen-login::after {
+      content: ''; position: absolute; pointer-events: none;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(67,160,71,.13) 0%, transparent 70%);
+      top: -160px; right: -160px;
     }
 
-    .login-logo-block {
-      text-align: center;
-    }
-    .login-logo-img {
-      height: 90px;
-      width: auto;
-      margin-bottom: 12px;
-    }
-    .login-tagline {
-      font-size: 13px;
-      color: var(--green-mid);
-      font-style: italic;
-      font-weight: 600;
+    .login-center {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 22px; max-width: 450px; width: 100%;
     }
 
-    .login-card {
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-top: 4px solid var(--green-bright);
-      border-radius: 16px;
-      padding: 40px 36px;
-      width: 100%;
-      box-shadow: var(--shadow-lg);
-    }
-    .login-card h1 {
-      font-size: 22px;
-      font-weight: 900;
-      color: var(--green-dark);
-      margin-bottom: 6px;
-    }
-    .login-card p {
-      font-size: 13px;
-      color: var(--gray-600);
-      margin-bottom: 28px;
-      line-height: 1.6;
-    }
-    .login-card input {
-      width: 100%;
-      padding: 13px 16px;
-      background: var(--gray-100);
-      border: 1.5px solid var(--gray-200);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 14px;
-      transition: border-color .15s;
-    }
-    .login-card input:focus {
-      outline: none;
-      border-color: var(--green-bright);
-      background: var(--white);
-    }
-    .login-card input::placeholder { color: var(--gray-400); font-weight: 400; }
-    .btn-primary {
-      display: block;
-      width: 100%;
-      padding: 14px;
-      background: var(--green-bright);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: background .15s;
-      letter-spacing: .3px;
-    }
-    .btn-primary:hover { background: var(--green-dark); }
-
-    /* How it works on login */
-    .login-how {
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-radius: 16px;
-      padding: 28px 32px;
-      width: 100%;
-      box-shadow: var(--shadow);
-    }
-    .login-how-title {
-      font-size: 10px;
-      font-weight: 800;
-      color: var(--green-bright);
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      margin-bottom: 18px;
-    }
-    .login-how-item {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      font-size: 13px;
-      color: var(--gray-600);
-      line-height: 1.5;
+    /* Brand above card */
+    .login-brand { text-align: center; }
+    .login-logo  {
+      height: 104px; width: auto;
+      filter: drop-shadow(0 6px 24px rgba(0,0,0,.55));
       margin-bottom: 13px;
     }
-    .login-how-item:last-child { margin-bottom: 0; }
-    .login-how-item span:first-child { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
-
-    /* ── Dashboard ── */
-    #screen-dashboard { align-items: flex-start; }
-    .dashboard { max-width: 980px; width: 100%; }
-
-    .welcome {
-      font-size: 20px;
-      font-weight: 900;
-      color: var(--green-dark);
-      margin-bottom: 22px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .login-org-name {
+      font-size: 11.5px; font-weight: 600;
+      color: rgba(255,255,255,.42);
+      text-transform: uppercase; letter-spacing: 1.4px; line-height: 1.7;
     }
 
-    /* ── Notification banners ── */
-    #notif-request {
-      display: none;
-      background: var(--gold-light);
-      border: 1px solid var(--gold);
+    /* Gold line separator */
+    .login-rule {
+      width: 56px; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold-lt), transparent);
+      border-radius: 2px;
+    }
+
+    /* Card */
+    .login-card {
+      width: 100%;
+      background: var(--white);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 28px 80px rgba(0,0,0,.48), 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .login-card-header {
+      background: linear-gradient(130deg, var(--g3) 0%, var(--g4) 100%);
+      padding: 18px 26px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .login-mission-badge {
+      background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.22);
+      color: #fff; font-size: 10.5px; font-weight: 700; padding: 4px 12px;
+      border-radius: 100px; letter-spacing: .5px; text-transform: uppercase;
+    }
+    .login-crescent { font-size: 22px; opacity: .9; }
+
+    .login-card-body { padding: 26px 26px 22px; }
+    .login-card-body h1 {
+      font-size: 21px; font-weight: 800; color: var(--text);
+      letter-spacing: -.35px; margin-bottom: 5px;
+    }
+    .login-card-body p {
+      font-size: 13px; color: var(--text3); line-height: 1.65; margin-bottom: 22px;
+    }
+
+    /* Input */
+    .input-wrap { position: relative; margin-bottom: 12px; }
+    .input-icon {
+      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+      font-size: 15px; pointer-events: none;
+    }
+    #name-input {
+      width: 100%; padding: 13px 15px 13px 40px;
+      border: 1.5px solid rgba(0,0,0,.1); border-radius: 10px;
+      font-family: inherit; font-size: 15px; font-weight: 600;
+      color: var(--text); background: #fafafa;
+      transition: border-color .18s, box-shadow .18s, background .18s; outline: none;
+    }
+    #name-input:focus {
+      border-color: var(--g5); background: var(--white);
+      box-shadow: 0 0 0 3px rgba(56,142,60,.12);
+    }
+    #name-input::placeholder { color: #c0c0c0; font-weight: 400; }
+
+    /* Primary button */
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px 20px;
+      background: var(--g5); color: #fff; border: none; border-radius: 10px;
+      font-family: inherit; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: background .18s, transform .1s; letter-spacing: -.1px;
+    }
+    .btn-primary:hover { background: var(--g3); }
+    .btn-primary:active { transform: scale(.99); }
+    .btn-arrow { display: inline-block; transition: transform .2s; }
+    .btn-primary:hover .btn-arrow { transform: translateX(4px); }
+
+    /* Feature grid */
+    .login-rule-thin {
+      height: 1px; background: rgba(0,0,0,.07); margin: 20px 0;
+    }
+    .login-features {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 9px;
+    }
+    .login-feat {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--text2); font-weight: 500;
+    }
+    .login-feat-icon { font-size: 15px; flex-shrink: 0; }
+
+    /* Tagline below card */
+    .login-tagline {
+      font-size: 13px; font-style: italic; font-weight: 500;
+      color: rgba(249,168,37,.78); text-align: center;
+    }
+    .login-tagline::before,
+    .login-tagline::after { content: ' ☪ '; opacity: .65; }
+
+    /* ══════════════════════════════════════════
+       DASHBOARD
+    ══════════════════════════════════════════ */
+    #screen-dashboard {
+      flex-direction: column; align-items: center;
+      padding: 26px 20px 64px;
+    }
+    .dashboard { max-width: 1000px; width: 100%; }
+
+    /* Welcome banner */
+    .welcome-bar {
+      background: var(--white);
+      border-left: 4px solid var(--g5);
       border-radius: 12px;
-      padding: 12px 16px;
+      padding: 18px 22px;
       margin-bottom: 18px;
-      font-size: 13px;
-      color: #5d4037;
-      align-items: center;
-      gap: 10px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--sh1);
+    }
+    #welcome-text {
+      font-size: 17px; font-weight: 800; color: var(--text);
+      letter-spacing: -.2px; flex: 1;
+    }
+    .welcome-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .mission-pill {
+      background: var(--g9); border: 1px solid var(--g8);
+      color: var(--g4); font-size: 11px; font-weight: 700;
+      padding: 5px 13px; border-radius: 100px;
+      white-space: nowrap; flex-shrink: 0;
+    }
+
+    /* Notification banners */
+    #notif-request {
+      display: none; background: var(--gold-bg);
+      border: 1px solid rgba(200,147,10,.28);
+      border-radius: 11px; padding: 11px 16px; margin-bottom: 16px;
+      font-size: 13px; color: #5d4037; align-items: center; gap: 10px;
     }
     #notif-request button {
-      margin-left: auto;
-      background: var(--gold);
-      border: none;
-      color: #fff;
-      border-radius: 8px;
-      padding: 6px 14px;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 700;
+      margin-left: auto; background: var(--gold); border: none;
+      color: #fff; border-radius: 7px; padding: 6px 14px;
+      font-size: 12px; font-family: inherit; font-weight: 700; cursor: pointer;
     }
     #notif-banner {
-      display: none;
-      background: var(--green-pale);
-      border: 1px solid var(--green-light);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 18px;
-      font-size: 13px;
-      color: var(--green-dark);
-      align-items: center;
-      gap: 10px;
+      display: none; background: var(--g9); border: 1px solid var(--g8);
+      border-radius: 11px; padding: 11px 16px; margin-bottom: 16px;
+      font-size: 13px; color: var(--g3); align-items: center; gap: 10px;
     }
     #notif-banner button {
-      margin-left: auto;
-      background: none;
-      border: 1px solid var(--green-bright);
-      color: var(--green-bright);
-      border-radius: 8px;
-      padding: 4px 12px;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 700;
+      margin-left: auto; background: none; border: 1px solid var(--g5);
+      color: var(--g5); border-radius: 7px; padding: 4px 12px;
+      font-size: 12px; font-family: inherit; font-weight: 700; cursor: pointer;
     }
 
-    /* ── Cards ── */
+    /* Base card */
     .card {
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-radius: 14px;
-      padding: 22px;
-      box-shadow: var(--shadow);
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 13px; padding: 20px; box-shadow: var(--sh1);
     }
     .card-label {
-      font-size: 10px;
-      font-weight: 800;
-      color: var(--green-bright);
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      margin-bottom: 14px;
+      font-size: 10px; font-weight: 700; color: var(--text3);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px;
     }
 
-    /* ── Info row ── */
+    /* Info row */
     .info-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin-bottom: 22px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px; margin-bottom: 18px;
     }
 
     /* Room code */
     .room-display {
-      font-size: 34px;
-      font-weight: 900;
-      letter-spacing: 8px;
-      color: var(--green-dark);
-      background: var(--green-pale);
-      border: 1.5px solid var(--green-light);
-      border-radius: 10px;
-      padding: 12px;
-      text-align: center;
-      margin-bottom: 12px;
+      font-size: 36px; font-weight: 900; letter-spacing: 10px;
+      color: var(--g3); text-align: center;
+      background: var(--g9); border: 1px solid var(--g8);
+      border-radius: 10px; padding: 14px 8px; margin-bottom: 12px;
       font-variant-numeric: tabular-nums;
     }
-    .copy-room-btn {
-      width: 100%;
-      padding: 9px;
-      background: none;
-      border: 1.5px solid var(--green-bright);
-      border-radius: 9px;
-      color: var(--green-bright);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background .15s, color .15s;
+    .btn-outline {
+      display: block; width: 100%; padding: 9px;
+      background: none; border: 1.5px solid var(--g5); border-radius: 8px;
+      color: var(--g4); font-family: inherit; font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: background .15s; text-align: center;
     }
-    .copy-room-btn:hover { background: var(--green-pale); }
+    .btn-outline:hover { background: var(--g9); }
 
     /* QR */
     .qr-wrap {
-      background: white;
-      border: 2px solid var(--green-pale);
-      border-radius: 12px;
-      padding: 12px;
-      display: inline-block;
-      margin-bottom: 10px;
+      background: #fff; border: 1.5px solid var(--g9); border-radius: 11px;
+      padding: 10px; display: inline-block; margin-bottom: 10px;
     }
-    .qr-wrap img { display: block; width: 150px; height: 150px; }
-    .scanner-link { font-size: 11px; color: var(--gray-600); word-break: break-all; line-height: 1.5; margin-bottom: 10px; }
-    .copy-btn {
-      width: 100%;
-      padding: 9px;
-      background: none;
-      border: 1.5px solid var(--green-bright);
-      border-radius: 9px;
-      color: var(--green-bright);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background .15s;
+    .qr-wrap img { display: block; width: 140px; height: 140px; }
+    .scanner-link {
+      font-size: 11px; color: var(--text3); word-break: break-all;
+      line-height: 1.5; margin-bottom: 10px;
     }
-    .copy-btn:hover { background: var(--green-pale); }
 
     /* Devices */
     .device-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 0;
-      border-bottom: 1px solid var(--gray-200);
-      font-size: 13px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px;
     }
     .device-row:last-child { border-bottom: none; }
     .device-icon { font-size: 17px; flex-shrink: 0; }
-    .device-name { font-weight: 700; color: var(--text); flex: 1; }
-    .device-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gray-400); flex-shrink: 0; }
-    .device-dot.online  { background: var(--green-light); }
-    .device-dot.offline { background: var(--gray-400); }
-    .device-status { font-size: 11px; color: var(--gray-600); }
-    .no-devices { font-size: 12px; color: var(--gray-400); padding: 8px 0; }
+    .device-name { font-weight: 600; color: var(--text); flex: 1; }
+    .device-dot { width: 7px; height: 7px; border-radius: 50%; background: #ddd; flex-shrink: 0; }
+    .device-dot.online  { background: var(--g6); box-shadow: 0 0 5px rgba(67,160,71,.45); }
+    .device-dot.offline { background: #ddd; }
+    .device-status { font-size: 11px; color: var(--text3); }
+    .no-devices { font-size: 12px; color: var(--text3); padding: 8px 0; }
 
-    /* ── Scan queue ── */
-    .queue-section { margin-bottom: 22px; }
-    .queue-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .queue-title { font-size: 15px; font-weight: 800; color: var(--text); }
-    .queue-count {
-      font-size: 11px;
-      font-weight: 800;
-      background: var(--green-bright);
-      color: #fff;
-      padding: 2px 9px;
-      border-radius: 100px;
+    /* ── Scan Queue ── */
+    .section-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 13px; overflow: hidden; box-shadow: var(--sh1); margin-bottom: 18px;
     }
-    .queue-count.zero { background: var(--gray-200); color: var(--gray-600); }
+    .section-head {
+      padding: 15px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .section-head-title { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.1px; }
+    .section-count {
+      font-size: 11px; font-weight: 700; background: var(--g5); color: #fff;
+      padding: 2px 9px; border-radius: 100px;
+    }
+    .section-count.zero { background: #eee; color: var(--text3); }
+    .section-hint { font-size: 12px; color: var(--text3); margin-left: auto; }
+    .section-body { padding: 18px 20px; }
+
     .queue-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 640px) { .queue-columns { grid-template-columns: 1fr; } }
-
     .queue-col-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--gray-600);
-      text-transform: uppercase;
-      letter-spacing: .8px;
-      margin-bottom: 10px;
+      font-size: 10px; font-weight: 700; color: var(--text3);
+      text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px;
     }
 
-    /* Scan card */
+    /* Scan cards */
     .scan-card {
-      background: var(--white);
-      border: 1.5px solid var(--gray-200);
-      border-radius: 12px;
-      padding: 14px 16px;
-      cursor: pointer;
-      transition: border-color .15s, box-shadow .15s;
-      margin-bottom: 10px;
-      position: relative;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px 12px 17px;
+      cursor: pointer; transition: box-shadow .15s, border-color .15s;
+      margin-bottom: 8px; position: relative; overflow: hidden;
     }
-    .scan-card:hover { border-color: var(--green-light); box-shadow: var(--shadow); }
-    .scan-card.selected { border-color: var(--green-bright) !important; background: var(--green-tint) !important; box-shadow: 0 0 0 3px rgba(56,142,60,.12); }
-    .scan-card.opened-card { opacity: 0.6; }
+    /* Left color stripe */
+    .scan-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 3px 0 0 3px; background: #ddd;
+    }
+    .scan-card:not(.opened-card)::before { background: var(--g5); }
+    .scan-card.selected::before { background: var(--gold); }
+    .scan-card:hover { box-shadow: var(--sh2); border-color: rgba(0,0,0,.13); }
+    .scan-card.selected { border-color: rgba(200,147,10,.3); background: #fffcf2; }
+    .scan-card.opened-card { opacity: .6; }
     .scan-card.opened-card:hover { opacity: 1; }
 
-    .scan-name { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
-    .scan-details { font-size: 12px; color: var(--gray-600); }
-    .scan-scanner { font-size: 11px; color: var(--gray-600); margin-top: 4px; }
-    .scan-time { font-size: 11px; color: var(--gray-400); margin-top: 3px; }
+    .scan-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .scan-details { font-size: 12px; color: var(--text3); }
+    .scan-scanner { font-size: 11px; color: var(--text3); margin-top: 3px; }
+    .scan-time { font-size: 11px; color: #c0c0c0; }
     .scan-selected-badge {
-      position: absolute; top: 10px; right: 12px;
-      font-size: 10px; font-weight: 800; color: var(--green-dark);
-      background: var(--green-pale); border: 1px solid var(--green-bright);
+      position: absolute; top: 9px; right: 11px;
+      font-size: 10px; font-weight: 700; color: var(--gold);
+      background: var(--gold-bg); border: 1px solid rgba(200,147,10,.28);
       padding: 2px 8px; border-radius: 100px;
     }
     .scan-new-badge {
-      position: absolute; top: 10px; right: 12px;
-      font-size: 10px; font-weight: 800; color: #fff;
-      background: var(--green-bright);
+      position: absolute; top: 9px; right: 11px;
+      font-size: 10px; font-weight: 700; color: #fff; background: var(--g5);
       padding: 2px 8px; border-radius: 100px;
     }
-    .queue-empty { font-size: 13px; color: var(--gray-400); padding: 16px 0; text-align: center; }
+    .queue-empty {
+      font-size: 13px; color: var(--text3); text-align: center;
+      padding: 22px 0; border: 1.5px dashed rgba(0,0,0,.1); border-radius: 9px;
+    }
 
-    /* ── How it works ── */
-    .how-card { margin-bottom: 22px; }
-    .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 6px; }
+    /* ── How it works (dark) ── */
+    .how-section {
+      background: var(--g1);
+      border: 1px solid rgba(255,255,255,.04);
+      border-radius: 13px; padding: 22px; margin-bottom: 18px;
+    }
+    .how-section .card-label { color: rgba(255,255,255,.35); }
+    .how-steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(182px, 1fr));
+      gap: 11px; margin-top: 4px;
+    }
     .how-step {
-      background: var(--green-tint);
-      border: 1px solid var(--green-pale);
-      border-radius: 12px;
-      padding: 18px 16px;
-    }
-    .how-step-icon  { font-size: 26px; margin-bottom: 8px; }
-    .how-step-title { font-size: 13px; font-weight: 800; color: var(--green-dark); margin-bottom: 5px; }
-    .how-step-desc  { font-size: 12px; color: var(--gray-600); line-height: 1.6; }
-    .how-step-num {
-      display: inline-block; width: 20px; height: 20px; border-radius: 50%;
-      background: var(--green-bright); color: #fff;
-      font-size: 11px; font-weight: 800;
-      text-align: center; line-height: 20px; margin-bottom: 8px;
-    }
-
-    /* ── Extension setup ── */
-    .ext-card { margin-bottom: 22px; }
-    .ext-download {
-      display: block; width: 100%; padding: 13px;
-      background: var(--green-bright); color: #fff;
-      border: none; border-radius: 10px;
-      font-size: 14px; font-weight: 800;
-      text-decoration: none; text-align: center;
-      margin-bottom: 18px;
+      background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 10px; padding: 15px;
       transition: background .15s;
     }
-    .ext-download:hover { background: var(--green-dark); }
+    .how-step:hover { background: rgba(255,255,255,.075); }
+    .how-step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 19px; height: 19px; border-radius: 50%;
+      background: var(--g5); color: #fff; font-size: 10px; font-weight: 800;
+      margin-bottom: 7px;
+    }
+    .how-step-icon { font-size: 21px; margin-bottom: 5px; }
+    .how-step-title { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.88); margin-bottom: 4px; }
+    .how-step-desc { font-size: 11px; color: rgba(255,255,255,.42); line-height: 1.65; }
+
+    /* ── Extension setup ── */
+    .ext-card { margin-bottom: 18px; }
+    .ext-download {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 12px 20px;
+      background: var(--g5); color: #fff; border: none; border-radius: 10px;
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      text-decoration: none; margin-bottom: 18px;
+      transition: background .18s;
+    }
+    .ext-download:hover { background: var(--g3); }
     .steps-list { list-style: none; counter-reset: step; }
     .steps-list li {
       counter-increment: step;
       display: flex; gap: 10px; align-items: flex-start;
-      margin-bottom: 9px; font-size: 13px; color: var(--gray-600); line-height: 1.5;
+      margin-bottom: 8px; font-size: 13px; color: var(--text2); line-height: 1.5;
     }
     .steps-list li::before {
       content: counter(step);
-      background: var(--green-pale);
-      color: var(--green-dark);
-      width: 21px; height: 21px; border-radius: 50%;
+      background: var(--g9); color: var(--g4);
+      min-width: 20px; height: 20px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 800; flex-shrink: 0; margin-top: 1px;
+      font-size: 10px; font-weight: 800; flex-shrink: 0; margin-top: 2px;
     }
     .steps-list code {
-      background: var(--green-pale);
-      padding: 2px 6px; border-radius: 4px;
-      font-size: 11px; color: var(--green-dark);
-      word-break: break-all;
+      background: var(--g9); padding: 1px 6px; border-radius: 4px;
+      font-size: 11px; color: var(--g3);
     }
     .steps-list strong { color: var(--text); }
 
     /* ── Footer ── */
     footer {
-      background: var(--green-dark);
-      color: rgba(255,255,255,.5);
-      text-align: center;
-      padding: 18px 24px;
-      font-size: 12px;
-      margin-top: auto;
+      background: var(--g1); color: rgba(255,255,255,.28);
+      text-align: center; padding: 22px 24px; font-size: 11px; letter-spacing: .3px;
     }
-    footer strong { color: rgba(255,255,255,.85); }
-
-    /* ── Divider ── */
-    .section-divider {
-      height: 3px;
-      background: linear-gradient(90deg, var(--green-bright), var(--green-light), transparent);
-      border-radius: 2px;
-      margin-bottom: 22px;
-    }
+    footer strong { color: rgba(255,255,255,.58); font-weight: 600; }
+    .footer-tagline { color: rgba(249,168,37,.55); font-style: italic; margin-top: 5px; }
   </style>
 </head>
 <body>
 
-<!-- ── Nav ── -->
+<!-- ══ NAV ══ -->
 <nav>
   <div class="nav-brand">
-    <img class="nav-logo-img"
+    <img class="nav-logo"
          src="https://ncnmo.org/wp-content/uploads/2024/03/ncnmologo.png"
-         alt="NCNMO Logo"
-         onerror="this.style.display='none'">
-    <div class="nav-brand-text">
-      <div class="nav-brand-title">Scan to Fill</div>
-      <div class="nav-brand-sub">NCNMO Medical Mission</div>
+         alt="NCNMO" onerror="this.style.display='none'">
+    <div>
+      <div class="nav-title-main">Scan to Fill</div>
+      <div class="nav-title-sub">NCNMO Medical Mission</div>
     </div>
   </div>
-  <div class="nav-right">
-    <div class="dot-wrap">
-      <div class="dot" id="nav-dot"></div>
-      <span id="nav-status">—</span>
-    </div>
-    <button id="logout-btn" onclick="logout()">← Not you?</button>
+  <div class="nav-sep"></div>
+  <div class="nav-status">
+    <div class="dot" id="nav-dot"></div>
+    <span id="nav-status">—</span>
   </div>
+  <button id="logout-btn" onclick="logout()">← Switch user</button>
 </nav>
 
-<!-- ── Login ── -->
+<!-- ══ LOGIN ══ -->
 <div class="screen active" id="screen-login">
-  <div class="login-wrap">
+  <div class="login-center">
 
-    <!-- Logo block -->
-    <div class="login-logo-block">
-      <img class="login-logo-img"
+    <!-- Logo + org name -->
+    <div class="login-brand">
+      <img class="login-logo"
            src="https://ncnmo.org/wp-content/uploads/2024/03/ncnmologo.png"
            alt="NCNMO Logo"
            onerror="this.style.display='none'">
-      <div class="login-tagline">"Propagation of Islam &amp; Service to Humanity"</div>
+      <div class="login-org-name">
+        National Council of Nigerian<br>Muslim Organizations
+      </div>
     </div>
 
-    <!-- Login form -->
+    <div class="login-rule"></div>
+
+    <!-- Card -->
     <div class="login-card">
-      <h1>Medical Mission Scanner</h1>
-      <p>NCNMO patient intake form digitizer.<br>Enter your name to get started.</p>
-      <input type="text" id="name-input" placeholder="Your name (e.g. Fatima)" autocomplete="off">
-      <button class="btn-primary" id="start-btn">Get Started →</button>
+      <div class="login-card-header">
+        <span class="login-mission-badge">☪&nbsp; Medical Mission</span>
+        <span class="login-crescent">🌙</span>
+      </div>
+      <div class="login-card-body">
+        <h1>Patient Intake Scanner</h1>
+        <p>Enter your name to access your room and start digitizing patient forms automatically.</p>
+
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input id="name-input" type="text" placeholder="Your name (e.g. Aisha)" autocomplete="off">
+        </div>
+        <button class="btn-primary" id="start-btn">
+          Get Started <span class="btn-arrow">→</span>
+        </button>
+
+        <div class="login-rule-thin"></div>
+
+        <div class="login-features">
+          <div class="login-feat"><span class="login-feat-icon">📷</span> Photo scanning</div>
+          <div class="login-feat"><span class="login-feat-icon">🤖</span> AI extraction</div>
+          <div class="login-feat"><span class="login-feat-icon">✅</span> Auto form fill</div>
+          <div class="login-feat"><span class="login-feat-icon">🔁</span> Instant reload</div>
+        </div>
+      </div>
     </div>
 
-    <!-- How it works summary -->
-    <div class="login-how">
-      <div class="login-how-title">How it works</div>
-      <div class="login-how-item">
-        <span>📷</span>
-        <span>Scanner photographs the paper patient intake form on their phone</span>
-      </div>
-      <div class="login-how-item">
-        <span>🤖</span>
-        <span>Claude AI reads the handwriting and extracts every field automatically</span>
-      </div>
-      <div class="login-how-item">
-        <span>✅</span>
-        <span>The NCNMO web form fills itself on the laptop — no typing needed</span>
-      </div>
-      <div class="login-how-item">
-        <span>🔁</span>
-        <span>Laptop navigates to the next blank form — scanner shoots the next patient</span>
-      </div>
-    </div>
-
+    <div class="login-tagline">Propagation of Islam &amp; Service to Humanity</div>
   </div>
 </div>
 
-<!-- ── Dashboard ── -->
+<!-- ══ DASHBOARD ══ -->
 <div class="screen" id="screen-dashboard">
   <div class="dashboard">
 
-    <div class="welcome" id="welcome-text">Welcome!</div>
-    <div class="section-divider"></div>
+    <!-- Welcome -->
+    <div class="welcome-bar">
+      <div>
+        <div id="welcome-text">Welcome!</div>
+        <div class="welcome-sub">Your room is active and ready to receive scans.</div>
+      </div>
+      <div class="mission-pill">🌙 Mission Active</div>
+    </div>
 
+    <!-- Notification banners -->
     <div id="notif-request" style="display:none">
       🔔 Get notified when a scan arrives
       <button id="notif-allow-btn">Allow Notifications</button>
@@ -596,14 +554,14 @@
       <div class="card">
         <div class="card-label">Your Room Code</div>
         <div class="room-display" id="room-display">—</div>
-        <button class="copy-room-btn" id="copy-room-btn">Copy Code</button>
+        <button class="btn-outline" id="copy-room-btn">Copy Code</button>
       </div>
 
       <div class="card" style="text-align:center">
         <div class="card-label">Phone Scanner</div>
         <div class="qr-wrap"><img id="qr-img" src="" alt="QR Code"></div>
         <div class="scanner-link" id="scanner-link">—</div>
-        <button class="copy-btn" id="copy-btn">Copy phone link</button>
+        <button class="btn-outline" id="copy-btn">Copy phone link</button>
       </div>
 
       <div class="card">
@@ -612,81 +570,74 @@
       </div>
     </div>
 
-    <!-- Scan queue -->
-    <div class="queue-section">
-      <div class="queue-header">
-        <span class="queue-title">📬 Scan Queue</span>
-        <span class="queue-count zero" id="unopened-count">0 new</span>
+    <!-- Scan Queue -->
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-head-title">📬 Scan Queue</span>
+        <span class="section-count zero" id="unopened-count">0 new</span>
+        <span class="section-hint">Click a scan → pushes to the extension</span>
       </div>
-      <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px;">
-        Click a scan to send it to the extension — then hit <strong>Fill Page Now</strong> in the extension to auto-fill the form.
-      </p>
-      <div class="queue-columns">
-        <div>
-          <div class="queue-col-label">📬 Unopened</div>
-          <div id="unopened-list"><p class="queue-empty">No new scans.</p></div>
-        </div>
-        <div>
-          <div class="queue-col-label">📂 Opened</div>
-          <div id="opened-list"><p class="queue-empty">Nothing opened yet.</p></div>
+      <div class="section-body">
+        <div class="queue-columns">
+          <div>
+            <div class="queue-col-label">📬 Unopened</div>
+            <div id="unopened-list"><p class="queue-empty">No new scans yet.</p></div>
+          </div>
+          <div>
+            <div class="queue-col-label">📂 Opened</div>
+            <div id="opened-list"><p class="queue-empty">Nothing opened yet.</p></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- How it works -->
-    <div class="card how-card">
+    <!-- How it works (dark section) -->
+    <div class="how-section">
       <div class="card-label">How it works</div>
       <div class="how-steps">
-
         <div class="how-step">
           <div class="how-step-num">1</div>
           <div class="how-step-icon">💻</div>
           <div class="how-step-title">Set up the laptop</div>
-          <div class="how-step-desc">Log in with your name to get a permanent room code. Download the Chrome extension and enter your room code once — it stays connected.</div>
+          <div class="how-step-desc">Log in to get a permanent room code. Install the Chrome extension and enter the code once — it stays connected.</div>
         </div>
-
         <div class="how-step">
           <div class="how-step-num">2</div>
           <div class="how-step-icon">📱</div>
           <div class="how-step-title">Connect a phone</div>
-          <div class="how-step-desc">Scan the QR code on this page — or open <strong>scan-to-fill.onrender.com/mobile.html</strong> and type the room code. Multiple phones can join the same room.</div>
+          <div class="how-step-desc">Scan the QR or open mobile.html and type the room code. Multiple phones can join the same room.</div>
         </div>
-
         <div class="how-step">
           <div class="how-step-num">3</div>
           <div class="how-step-icon">📷</div>
-          <div class="how-step-title">Scan the paper form</div>
-          <div class="how-step-desc">The scanner taps Take Photo and photographs the patient's paper intake form. Claude AI reads the handwriting and extracts every field automatically.</div>
+          <div class="how-step-title">Scan the form</div>
+          <div class="how-step-desc">Tap Take Photo and photograph the patient's paper intake form. AI reads the handwriting instantly.</div>
         </div>
-
         <div class="how-step">
           <div class="how-step-num">4</div>
           <div class="how-step-icon">✏️</div>
           <div class="how-step-title">Review &amp; confirm</div>
-          <div class="how-step-desc">The phone shows all extracted fields. The scanner checks for mistakes, edits any wrong values, then taps <strong>Confirm &amp; Fill Form</strong>.</div>
+          <div class="how-step-desc">Check every extracted field on the phone, fix any mistakes, then tap Confirm &amp; Fill Form.</div>
         </div>
-
         <div class="how-step">
           <div class="how-step-num">5</div>
           <div class="how-step-icon">✅</div>
           <div class="how-step-title">Form fills itself</div>
-          <div class="how-step-desc">The NCNMO web form on the laptop fills in automatically — name, gender, marital status, state, location, date of birth, everything. No clicking needed.</div>
+          <div class="how-step-desc">The NCNMO web form on the laptop fills in automatically — name, gender, marital status, date of birth, everything.</div>
         </div>
-
         <div class="how-step">
           <div class="how-step-num">6</div>
           <div class="how-step-icon">🔁</div>
           <div class="how-step-title">Next patient, instantly</div>
-          <div class="how-step-desc">The laptop navigates to a fresh blank form on its own. The scanner immediately photographs the next patient's form. The cycle repeats.</div>
+          <div class="how-step-desc">The laptop loads a fresh blank form on its own. Scan the next patient's form and the cycle repeats.</div>
         </div>
-
       </div>
     </div>
 
     <!-- Extension setup -->
     <div class="card ext-card">
       <div class="card-label">Chrome Extension Setup</div>
-      <a class="ext-download" href="/download/extension">⬇ Download Extension</a>
+      <a class="ext-download" href="/download/extension">⬇ Download Extension (.zip)</a>
       <ol class="steps-list">
         <li>Download and <strong>unzip</strong> the file above</li>
         <li>Go to <code>chrome://extensions</code> in Chrome</li>
@@ -700,9 +651,10 @@
   </div>
 </div>
 
-<!-- ── Footer ── -->
+<!-- ══ FOOTER ══ -->
 <footer>
-  <strong>NCNMO Medical Mission</strong> — Scan to Fill &nbsp;·&nbsp; Propagation of Islam &amp; Service to Humanity
+  <strong>NCNMO</strong> · National Council of Nigerian Muslim Organizations<br>
+  <div class="footer-tagline">"Propagation of Islam &amp; Service to Humanity"</div>
 </footer>
 
 <script>
@@ -716,243 +668,189 @@
 
   // ── Helpers ──────────────────────────────────────────────
   function esc(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
   function timeAgo(ts) {
-    const s = Math.floor((Date.now() - ts) / 1000);
-    if (s < 60)  return 'just now';
-    if (s < 3600) return Math.floor(s/60) + 'm ago';
-    if (s < 86400) return Math.floor(s/3600) + 'h ago';
-    return new Date(ts).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    const s = Math.floor((Date.now()-ts)/1000);
+    if (s<60)    return 'just now';
+    if (s<3600)  return Math.floor(s/60)+'m ago';
+    if (s<86400) return Math.floor(s/3600)+'h ago';
+    return new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }
   function randomRoom() {
-    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    return Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
+    const l='ABCDEFGHJKLMNPQRSTUVWXYZ';
+    return Array.from({length:4},()=>l[Math.floor(Math.random()*l.length)]).join('');
   }
-  function scannerUrl(room) { return `${SERVER}/mobile.html?room=${encodeURIComponent(room)}`; }
-  function qrSrc(url) { return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&margin=0&color=1b5e20`; }
+  function scannerUrl(room){ return `${SERVER}/mobile.html?room=${encodeURIComponent(room)}`; }
+  function qrSrc(url){ return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(url)}&margin=0&color=1b5e20`; }
 
   // ── Room ─────────────────────────────────────────────────
-  let liveRoom = null;
-  let selectedId = null;
-  let liveSSE = null;
+  let liveRoom=null, selectedId=null, liveSSE=null;
 
-  function updateRoomDisplay(room) {
-    document.getElementById('room-display').textContent = room;
-    document.getElementById('room-code-hint').textContent = room;
-    const url = scannerUrl(room);
-    document.getElementById('scanner-link').textContent = url;
-    document.getElementById('qr-img').src = qrSrc(url);
+  function updateRoomDisplay(room){
+    document.getElementById('room-display').textContent=room;
+    document.getElementById('room-code-hint').textContent=room;
+    const url=scannerUrl(room);
+    document.getElementById('scanner-link').textContent=url;
+    document.getElementById('qr-img').src=qrSrc(url);
   }
 
   // ── Dashboard ─────────────────────────────────────────────
-  function showDashboard(name, room) {
+  function showDashboard(name,room){
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-dashboard').classList.add('active');
-    document.getElementById('logout-btn').style.display = 'block';
-    document.getElementById('welcome-text').textContent = `Welcome, ${name}! 👋`;
-    liveRoom = room;
+    document.getElementById('logout-btn').style.display='block';
+    document.getElementById('welcome-text').textContent=`Welcome, ${name}! 👋`;
+    liveRoom=room;
     updateRoomDisplay(room);
     setupNotifications();
     refreshAll();
     startSSE(room);
-    setInterval(refreshDevices, 30000);
+    setInterval(refreshDevices,30000);
   }
 
-  // ── SSE: server pushes scan updates instantly ─────────────
-  function startSSE(room) {
-    if (liveSSE) liveSSE.close();
-    liveSSE = new EventSource(`/api/stream?room=${encodeURIComponent(room)}`);
-    let firstEvent = true;
-
-    liveSSE.addEventListener('new-scan', e => {
-      const data = JSON.parse(e.data);
+  // ── SSE ───────────────────────────────────────────────────
+  function startSSE(room){
+    if(liveSSE) liveSSE.close();
+    liveSSE=new EventSource(`/api/stream?room=${encodeURIComponent(room)}`);
+    let first=true;
+    liveSSE.addEventListener('new-scan',e=>{
+      const data=JSON.parse(e.data);
       renderScans(data);
-      if (!firstEvent) {
-        const newest = data.unopened?.[0];
-        if (newest) {
-          const f = newest.fields || {};
-          const name = [f['First Name'], f['Last Name']].filter(Boolean).join(' ') || 'a patient';
-          showScanBanner(name);
-          sendBrowserNotification(name);
+      if(!first){
+        const n=data.unopened?.[0];
+        if(n){
+          const f=n.fields||{};
+          const nm=[f['First Name'],f['Last Name']].filter(Boolean).join(' ')||'a patient';
+          showScanBanner(nm); sendBrowserNotification(nm);
         }
       }
-      firstEvent = false;
+      first=false;
     });
-
-    liveSSE.onerror = () => {
-      liveSSE.close();
-      setTimeout(() => { if (liveRoom) startSSE(liveRoom); }, 3000);
-    };
+    liveSSE.onerror=()=>{ liveSSE.close(); setTimeout(()=>{ if(liveRoom) startSSE(liveRoom); },3000); };
   }
 
-  async function refreshAll() {
-    if (!liveRoom) return;
-    await Promise.all([refreshScans(), refreshDevices()]);
+  async function refreshAll(){ if(!liveRoom) return; await Promise.all([refreshScans(),refreshDevices()]); }
+
+  // ── Scans ─────────────────────────────────────────────────
+  async function refreshScans(){
+    try{ const r=await fetch(`/api/scans?room=${liveRoom}`); renderScans(await r.json()); }catch{}
   }
-
-  // ── Scan queue ─────────────────────────────────────────────
-  async function refreshScans() {
-    try {
-      const res  = await fetch(`/api/scans?room=${liveRoom}`);
-      const data = await res.json();
-      renderScans(data);
-    } catch {}
+  function renderScans({unopened=[],opened=[],selected=null}){
+    selectedId=selected?.id||null;
+    const c=document.getElementById('unopened-count');
+    c.textContent=unopened.length?`${unopened.length} new`:'0 new';
+    c.className='section-count'+(unopened.length?'':' zero');
+    document.getElementById('unopened-list').innerHTML=
+      unopened.length?unopened.map(s=>scanCard(s,false)).join(''):'<p class="queue-empty">No new scans yet.</p>';
+    document.getElementById('opened-list').innerHTML=
+      opened.length?opened.map(s=>scanCard(s,true)).join(''):'<p class="queue-empty">Nothing opened yet.</p>';
+    document.querySelectorAll('.scan-card').forEach(c=>c.addEventListener('click',()=>selectScan(c.dataset.id)));
   }
-
-  function renderScans({ unopened = [], opened = [], selected = null }) {
-    selectedId = selected?.id || null;
-
-    const countEl = document.getElementById('unopened-count');
-    countEl.textContent = unopened.length ? `${unopened.length} new` : '0 new';
-    countEl.className = 'queue-count' + (unopened.length ? '' : ' zero');
-
-    document.getElementById('unopened-list').innerHTML =
-      unopened.length ? unopened.map(s => scanCard(s, false)).join('') :
-      '<p class="queue-empty">No new scans.</p>';
-
-    document.getElementById('opened-list').innerHTML =
-      opened.length ? opened.map(s => scanCard(s, true)).join('') :
-      '<p class="queue-empty">Nothing opened yet.</p>';
-
-    document.querySelectorAll('.scan-card').forEach(card => {
-      card.addEventListener('click', () => selectScan(card.dataset.id));
-    });
+  function scanCard(scan,isOpened){
+    const f=scan.fields||{};
+    const name=[f['First Name'],f['Last Name']].filter(Boolean).join(' ')||'(unknown)';
+    const details=[f['Gender (Sex)'],f['Age']?`${f['Age']} yrs`:'',f['Marital Status']].filter(Boolean).join(' · ');
+    const isSel=scan.id===selectedId;
+    const badge=isSel
+      ?'<span class="scan-selected-badge">✓ Selected</span>'
+      :(!isOpened?'<span class="scan-new-badge">New</span>':'');
+    return `<div class="scan-card${isSel?' selected':''}${isOpened&&!isSel?' opened-card':''}" data-id="${esc(scan.id)}">
+      ${badge}
+      <div class="scan-name">${esc(name)}</div>
+      ${details?`<div class="scan-details">${esc(details)}</div>`:''}
+      <div class="scan-scanner">📱 ${esc(scan.scannerName||'Phone')}</div>
+      <div class="scan-time">${timeAgo(scan.timestamp)}</div>
+    </div>`;
   }
-
-  function scanCard(scan, isOpened) {
-    const f = scan.fields || {};
-    const name = [f['First Name'], f['Last Name']].filter(Boolean).join(' ') || '(unknown)';
-    const details = [f['Gender (Sex)'], f['Age'] ? `${f['Age']} yrs` : '', f['Marital Status']].filter(Boolean).join(' · ');
-    const isSelected = scan.id === selectedId;
-
-    let badge = '';
-    if (isSelected)       badge = '<span class="scan-selected-badge">✓ Selected</span>';
-    else if (!isOpened)   badge = '<span class="scan-new-badge">New</span>';
-
-    return `
-      <div class="scan-card ${isSelected ? 'selected' : ''} ${isOpened && !isSelected ? 'opened-card' : ''}"
-           data-id="${esc(scan.id)}">
-        ${badge}
-        <div class="scan-name">${esc(name)}</div>
-        ${details ? `<div class="scan-details">${esc(details)}</div>` : ''}
-        <div class="scan-scanner">📱 ${esc(scan.scannerName || 'Phone')}</div>
-        <div class="scan-time">${timeAgo(scan.timestamp)}</div>
-      </div>`;
-  }
-
-  async function selectScan(id) {
-    if (!liveRoom || !id) return;
-    try {
-      await fetch('/api/scan/select', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room: liveRoom, id })
-      });
+  async function selectScan(id){
+    if(!liveRoom||!id) return;
+    try{
+      await fetch('/api/scan/select',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room:liveRoom,id})});
       await refreshScans();
-    } catch {}
+    }catch{}
   }
 
   // ── Devices ──────────────────────────────────────────────
-  async function refreshDevices() {
-    try {
-      const res  = await fetch(`/api/room-status?room=${liveRoom}`);
-      const data = await res.json();
-      renderDevices(data);
-    } catch {}
+  async function refreshDevices(){
+    try{ const r=await fetch(`/api/room-status?room=${liveRoom}`); renderDevices(await r.json()); }catch{}
   }
-
-  function deviceRow(icon, name, online) {
-    return `
-      <div class="device-row">
-        <div class="device-icon">${icon}</div>
-        <div class="device-name">${esc(name)}</div>
-        <div class="device-dot ${online ? 'online' : 'offline'}"></div>
-        <span class="device-status">${online ? 'Online' : 'Offline'}</span>
-      </div>`;
+  function deviceRow(icon,name,online){
+    return `<div class="device-row">
+      <div class="device-icon">${icon}</div>
+      <div class="device-name">${esc(name)}</div>
+      <div class="device-dot ${online?'online':'offline'}"></div>
+      <span class="device-status">${online?'Online':'Offline'}</span>
+    </div>`;
   }
-
-  function renderDevices({ laptop, phones }) {
-    const el   = document.getElementById('devices-list');
-    const rows = [];
-    rows.push(deviceRow('💻', laptop ? laptop.name : 'No laptop', laptop?.online || false));
-    if (phones && phones.length) {
-      phones.forEach(p => rows.push(deviceRow('📱', p.name, p.online)));
-    } else {
-      rows.push(deviceRow('📱', 'No phone connected', false));
-    }
-    el.innerHTML = rows.join('');
+  function renderDevices({laptop,phones}){
+    const rows=[deviceRow('💻',laptop?laptop.name:'No laptop',laptop?.online||false)];
+    if(phones&&phones.length) phones.forEach(p=>rows.push(deviceRow('📱',p.name,p.online)));
+    else rows.push(deviceRow('📱','No phone connected',false));
+    document.getElementById('devices-list').innerHTML=rows.join('');
   }
 
   // ── Notifications ─────────────────────────────────────────
-  function setupNotifications() {
-    if (!('Notification' in window) || Notification.permission !== 'default') return;
-    document.getElementById('notif-request').style.display = 'flex';
-    document.getElementById('notif-allow-btn').addEventListener('click', () => {
-      Notification.requestPermission().then(() => {
-        document.getElementById('notif-request').style.display = 'none';
-      });
+  function setupNotifications(){
+    if(!('Notification' in window)||Notification.permission!=='default') return;
+    document.getElementById('notif-request').style.display='flex';
+    document.getElementById('notif-allow-btn').addEventListener('click',()=>{
+      Notification.requestPermission().then(()=>{ document.getElementById('notif-request').style.display='none'; });
     });
   }
-  function showScanBanner(name) {
-    document.getElementById('notif-banner-text').textContent = `📄 New scan for ${name} — click it below to send to the extension.`;
-    document.getElementById('notif-banner').style.display = 'flex';
+  function showScanBanner(name){
+    document.getElementById('notif-banner-text').textContent=`📄 New scan for ${name} — click it below to send to the extension.`;
+    document.getElementById('notif-banner').style.display='flex';
   }
-  document.getElementById('notif-dismiss-btn').addEventListener('click', () => {
-    document.getElementById('notif-banner').style.display = 'none';
+  document.getElementById('notif-dismiss-btn').addEventListener('click',()=>{
+    document.getElementById('notif-banner').style.display='none';
   });
-  function sendBrowserNotification(name) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    new Notification('📄 New Scan', { body: `${name} — click it on the website to send to the extension.` });
+  function sendBrowserNotification(name){
+    if(!('Notification' in window)||Notification.permission!=='granted') return;
+    new Notification('📄 New Scan',{body:`${name} — click it on the website to send to the extension.`});
   }
 
   // ── Login / logout ────────────────────────────────────────
-  async function login(name) {
-    name = name.trim();
-    if (!name) return;
+  async function login(name){
+    name=name.trim(); if(!name) return;
     let room;
-    try {
-      const res = await fetch(`/api/user-room?name=${encodeURIComponent(name)}`);
-      const d   = await res.json();
-      room = d.room;
-    } catch {
-      const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
-      room = saved.name?.toLowerCase() === name.toLowerCase() ? saved.room : randomRoom();
+    try{ const r=await fetch(`/api/user-room?name=${encodeURIComponent(name)}`); room=(await r.json()).room; }
+    catch{
+      const s=JSON.parse(localStorage.getItem('stf-user')||'{}');
+      room=s.name?.toLowerCase()===name.toLowerCase()?s.room:randomRoom();
     }
-    localStorage.setItem('stf-user', JSON.stringify({ name, room }));
-    showDashboard(name, room);
+    localStorage.setItem('stf-user',JSON.stringify({name,room}));
+    showDashboard(name,room);
   }
-
-  function logout() {
+  function logout(){
     localStorage.removeItem('stf-user');
     document.getElementById('screen-dashboard').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
-    document.getElementById('logout-btn').style.display = 'none';
-    document.getElementById('name-input').value = '';
-    liveRoom = null; selectedId = null;
+    document.getElementById('logout-btn').style.display='none';
+    document.getElementById('name-input').value='';
+    liveRoom=null; selectedId=null;
   }
 
   // ── Events ───────────────────────────────────────────────
-  document.getElementById('start-btn').addEventListener('click', () => login(document.getElementById('name-input').value));
-  document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') login(document.getElementById('name-input').value); });
-
-  document.getElementById('copy-room-btn').addEventListener('click', () => {
-    navigator.clipboard.writeText(document.getElementById('room-display').textContent).then(() => {
-      document.getElementById('copy-room-btn').textContent = '✓ Copied!';
-      setTimeout(() => { document.getElementById('copy-room-btn').textContent = 'Copy Code'; }, 1500);
+  document.getElementById('start-btn').addEventListener('click',()=>login(document.getElementById('name-input').value));
+  document.getElementById('name-input').addEventListener('keydown',e=>{ if(e.key==='Enter') login(document.getElementById('name-input').value); });
+  document.getElementById('copy-room-btn').addEventListener('click',()=>{
+    navigator.clipboard.writeText(document.getElementById('room-display').textContent).then(()=>{
+      document.getElementById('copy-room-btn').textContent='✓ Copied!';
+      setTimeout(()=>{ document.getElementById('copy-room-btn').textContent='Copy Code'; },1500);
     });
   });
-  document.getElementById('copy-btn').addEventListener('click', () => {
-    navigator.clipboard.writeText(document.getElementById('scanner-link').textContent).then(() => {
-      document.getElementById('copy-btn').textContent = '✓ Copied!';
-      setTimeout(() => { document.getElementById('copy-btn').textContent = 'Copy phone link'; }, 1500);
+  document.getElementById('copy-btn').addEventListener('click',()=>{
+    navigator.clipboard.writeText(document.getElementById('scanner-link').textContent).then(()=>{
+      document.getElementById('copy-btn').textContent='✓ Copied!';
+      setTimeout(()=>{ document.getElementById('copy-btn').textContent='Copy phone link'; },1500);
     });
   });
 
   // ── Auto-login ───────────────────────────────────────────
-  window.addEventListener('DOMContentLoaded', () => {
-    const saved = JSON.parse(localStorage.getItem('stf-user') || '{}');
-    if (saved.name) login(saved.name);
+  window.addEventListener('DOMContentLoaded',()=>{
+    const s=JSON.parse(localStorage.getItem('stf-user')||'{}');
+    if(s.name) login(s.name);
   });
 </script>
 </body>
