@@ -8,52 +8,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --g1: #051209;
-      --g2: #0c2611;
-      --g3: #1b5e20;
-      --g4: #2e7d32;
-      --g5: #388e3c;
-      --g6: #43a047;
-      --g7: #66bb6a;
-      --g8: #a5d6a7;
-      --g9: #e8f5e9;
-      --gold:    #c8930a;
-      --gold-lt: #f9a825;
-      --gold-bg: #fffbf0;
-      --body:    #f0f4f0;
-      --white:   #ffffff;
-      --text:    #0a1f0c;
-      --text2:   #3d6b42;
-      --text3:   #7a9e7e;
-      --border:  rgba(0,0,0,.08);
+      --g1: #051209; --g2: #0c2611; --g3: #1b5e20;
+      --g4: #2e7d32; --g5: #388e3c; --g6: #43a047;
+      --g7: #66bb6a; --g8: #a5d6a7; --g9: #e8f5e9;
+      --gold: #c8930a; --gold-lt: #f9a825; --gold-bg: #fffbf0;
+      --body: #f0f4f0; --white: #ffffff;
+      --text: #0a1f0c; --text2: #3d6b42; --text3: #7a9e7e;
+      --border: rgba(0,0,0,.08);
       --sh1: 0 1px 6px rgba(0,0,0,.06);
       --sh2: 0 4px 20px rgba(0,0,0,.10);
       --sh3: 0 8px 48px rgba(0,0,0,.18);
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: var(--body);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--body); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ══════════════════════════════════════════
-       NAV
-    ══════════════════════════════════════════ */
+    /* ── NAV ── */
     nav {
-      position: sticky; top: 0; z-index: 200;
-      height: 58px;
-      background: var(--g1);
-      border-bottom: 1px solid rgba(255,255,255,.05);
-      display: flex; align-items: center;
-      padding: 0 22px; gap: 14px;
-      flex-shrink: 0;
+      position: sticky; top: 0; z-index: 200; height: 58px;
+      background: var(--g1); border-bottom: 1px solid rgba(255,255,255,.05);
+      display: flex; align-items: center; padding: 0 22px; gap: 14px; flex-shrink: 0;
     }
     .nav-brand { display: flex; align-items: center; gap: 10px; flex: 1; }
     .nav-logo  { height: 36px; width: auto; object-fit: contain; }
@@ -67,104 +45,61 @@
       display: none;
       background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.11);
       color: rgba(255,255,255,.55); padding: 5px 14px; border-radius: 6px;
-      font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer;
-      transition: all .18s;
+      font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; transition: all .18s;
     }
     #logout-btn:hover { background: rgba(255,255,255,.13); color: #fff; }
 
-    /* ══════════════════════════════════════════
-       SCREENS
-    ══════════════════════════════════════════ */
+    /* ── SCREENS ── */
     .screen { flex: 1; display: none; }
     .screen.active { display: flex; }
 
-    /* ══════════════════════════════════════════
-       LOGIN
-    ══════════════════════════════════════════ */
+    /* ── LOGIN ── */
     #screen-login {
       position: relative; overflow: hidden;
       flex-direction: column; align-items: center; justify-content: center;
       padding: 48px 20px 64px;
-      /* Deep forest green with radial highlights */
       background:
-        radial-gradient(ellipse at 12% 88%, rgba(67,160,71,.2)  0%, transparent 52%),
+        radial-gradient(ellipse at 12% 88%, rgba(67,160,71,.2) 0%, transparent 52%),
         radial-gradient(ellipse at 88% 12%, rgba(200,147,10,.09) 0%, transparent 50%),
         linear-gradient(148deg, #051209 0%, #0c2611 45%, #0d3318 100%);
     }
-    /* Tiled diamond-lattice pattern */
-    #screen-login::before {
-      content: ''; position: absolute; inset: 0; pointer-events: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M30 2L58 30L30 58L2 30Z' fill='none' stroke='rgba(255,255,255,0.055)' stroke-width='1'/%3E%3C/svg%3E");
-      background-size: 60px 60px;
+    #login-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
     }
-    /* Ambient glow top-right */
-    #screen-login::after {
-      content: ''; position: absolute; pointer-events: none;
-      width: 600px; height: 600px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(67,160,71,.13) 0%, transparent 70%);
-      top: -160px; right: -160px;
-    }
-
     .login-center {
       position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center;
       gap: 22px; max-width: 450px; width: 100%;
     }
-
-    /* Brand above card */
     .login-brand { text-align: center; }
-    .login-logo  {
-      height: 104px; width: auto;
-      filter: drop-shadow(0 6px 24px rgba(0,0,0,.55));
-      margin-bottom: 13px;
-    }
+    .login-logo  { height: 104px; width: auto; filter: drop-shadow(0 6px 24px rgba(0,0,0,.55)); margin-bottom: 13px; }
     .login-org-name {
-      font-size: 11.5px; font-weight: 600;
-      color: rgba(255,255,255,.42);
+      font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,.42);
       text-transform: uppercase; letter-spacing: 1.4px; line-height: 1.7;
     }
-
-    /* Gold line separator */
-    .login-rule {
-      width: 56px; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--gold-lt), transparent);
-      border-radius: 2px;
-    }
-
-    /* Card */
+    .login-rule { width: 56px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold-lt), transparent); border-radius: 2px; }
     .login-card {
-      width: 100%;
-      background: var(--white);
-      border-radius: 20px;
-      overflow: hidden;
+      width: 100%; background: var(--white); border-radius: 20px; overflow: hidden;
       box-shadow: 0 28px 80px rgba(0,0,0,.48), 0 0 0 1px rgba(255,255,255,.04);
     }
     .login-card-header {
       background: linear-gradient(130deg, var(--g3) 0%, var(--g4) 100%);
-      padding: 18px 26px;
-      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 26px; display: flex; align-items: center; justify-content: space-between;
     }
     .login-mission-badge {
       background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.22);
       color: #fff; font-size: 10.5px; font-weight: 700; padding: 4px 12px;
       border-radius: 100px; letter-spacing: .5px; text-transform: uppercase;
     }
-    .login-crescent { font-size: 22px; opacity: .9; }
-
+    .login-card-header-symbol { font-size: 18px; color: rgba(255,255,255,.7); letter-spacing: -2px; }
     .login-card-body { padding: 26px 26px 22px; }
-    .login-card-body h1 {
-      font-size: 21px; font-weight: 800; color: var(--text);
-      letter-spacing: -.35px; margin-bottom: 5px;
-    }
-    .login-card-body p {
-      font-size: 13px; color: var(--text3); line-height: 1.65; margin-bottom: 22px;
-    }
-
-    /* Input */
+    .login-card-body h1 { font-size: 21px; font-weight: 800; color: var(--text); letter-spacing: -.35px; margin-bottom: 5px; }
+    .login-card-body p  { font-size: 13px; color: var(--text3); line-height: 1.65; margin-bottom: 22px; }
     .input-wrap { position: relative; margin-bottom: 12px; }
-    .input-icon {
-      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-      font-size: 15px; pointer-events: none;
+    .input-label {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 13px; font-weight: 600; color: var(--text3); pointer-events: none;
     }
     #name-input {
       width: 100%; padding: 13px 15px 13px 40px;
@@ -173,13 +108,8 @@
       color: var(--text); background: #fafafa;
       transition: border-color .18s, box-shadow .18s, background .18s; outline: none;
     }
-    #name-input:focus {
-      border-color: var(--g5); background: var(--white);
-      box-shadow: 0 0 0 3px rgba(56,142,60,.12);
-    }
+    #name-input:focus { border-color: var(--g5); background: var(--white); box-shadow: 0 0 0 3px rgba(56,142,60,.12); }
     #name-input::placeholder { color: #c0c0c0; font-weight: 400; }
-
-    /* Primary button */
     .btn-primary {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       width: 100%; padding: 13px 20px;
@@ -191,70 +121,45 @@
     .btn-primary:active { transform: scale(.99); }
     .btn-arrow { display: inline-block; transition: transform .2s; }
     .btn-primary:hover .btn-arrow { transform: translateX(4px); }
-
-    /* Feature grid */
-    .login-rule-thin {
-      height: 1px; background: rgba(0,0,0,.07); margin: 20px 0;
-    }
-    .login-features {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 9px;
-    }
+    .login-rule-thin { height: 1px; background: rgba(0,0,0,.07); margin: 20px 0; }
+    .login-features { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .login-feat {
       display: flex; align-items: center; gap: 8px;
       font-size: 12px; color: var(--text2); font-weight: 500;
     }
-    .login-feat-icon { font-size: 15px; flex-shrink: 0; }
-
-    /* Tagline below card */
-    .login-tagline {
-      font-size: 13px; font-style: italic; font-weight: 500;
-      color: rgba(249,168,37,.78); text-align: center;
+    .login-feat-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--g5); flex-shrink: 0;
     }
-    .login-tagline::before,
-    .login-tagline::after { content: ' ☪ '; opacity: .65; }
+    .login-tagline { font-size: 13px; font-style: italic; font-weight: 500; color: rgba(249,168,37,.78); text-align: center; }
 
-    /* ══════════════════════════════════════════
-       DASHBOARD
-    ══════════════════════════════════════════ */
-    #screen-dashboard {
-      flex-direction: column; align-items: center;
-      padding: 26px 20px 64px;
-    }
+    /* ── DASHBOARD ── */
+    #screen-dashboard { flex-direction: column; align-items: center; padding: 26px 20px 64px; }
     .dashboard { max-width: 1000px; width: 100%; }
-
-    /* Welcome banner */
     .welcome-bar {
-      background: var(--white);
-      border-left: 4px solid var(--g5);
-      border-radius: 12px;
-      padding: 18px 22px;
-      margin-bottom: 18px;
-      display: flex; align-items: center; gap: 14px;
-      box-shadow: var(--sh1);
+      background: var(--white); border-left: 4px solid var(--g5);
+      border-radius: 12px; padding: 18px 22px; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 14px; box-shadow: var(--sh1);
     }
-    #welcome-text {
-      font-size: 17px; font-weight: 800; color: var(--text);
-      letter-spacing: -.2px; flex: 1;
-    }
+    #welcome-text { font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -.2px; flex: 1; }
     .welcome-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
     .mission-pill {
+      display: flex; align-items: center; gap: 6px;
       background: var(--g9); border: 1px solid var(--g8);
       color: var(--g4); font-size: 11px; font-weight: 700;
-      padding: 5px 13px; border-radius: 100px;
-      white-space: nowrap; flex-shrink: 0;
+      padding: 5px 13px; border-radius: 100px; white-space: nowrap; flex-shrink: 0;
     }
+    .mission-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--g5); }
 
     /* Notification banners */
     #notif-request {
-      display: none; background: var(--gold-bg);
-      border: 1px solid rgba(200,147,10,.28);
+      display: none; background: var(--gold-bg); border: 1px solid rgba(200,147,10,.28);
       border-radius: 11px; padding: 11px 16px; margin-bottom: 16px;
       font-size: 13px; color: #5d4037; align-items: center; gap: 10px;
     }
     #notif-request button {
-      margin-left: auto; background: var(--gold); border: none;
-      color: #fff; border-radius: 7px; padding: 6px 14px;
-      font-size: 12px; font-family: inherit; font-weight: 700; cursor: pointer;
+      margin-left: auto; background: var(--gold); border: none; color: #fff;
+      border-radius: 7px; padding: 6px 14px; font-size: 12px; font-family: inherit; font-weight: 700; cursor: pointer;
     }
     #notif-banner {
       display: none; background: var(--g9); border: 1px solid var(--g8);
@@ -262,35 +167,20 @@
       font-size: 13px; color: var(--g3); align-items: center; gap: 10px;
     }
     #notif-banner button {
-      margin-left: auto; background: none; border: 1px solid var(--g5);
-      color: var(--g5); border-radius: 7px; padding: 4px 12px;
-      font-size: 12px; font-family: inherit; font-weight: 700; cursor: pointer;
+      margin-left: auto; background: none; border: 1px solid var(--g5); color: var(--g5);
+      border-radius: 7px; padding: 4px 12px; font-size: 12px; font-family: inherit; font-weight: 700; cursor: pointer;
     }
 
-    /* Base card */
-    .card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 13px; padding: 20px; box-shadow: var(--sh1);
-    }
-    .card-label {
-      font-size: 10px; font-weight: 700; color: var(--text3);
-      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px;
-    }
-
-    /* Info row */
-    .info-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 14px; margin-bottom: 18px;
-    }
+    /* Cards */
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 13px; padding: 20px; box-shadow: var(--sh1); }
+    .card-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+    .info-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
 
     /* Room code */
     .room-display {
-      font-size: 36px; font-weight: 900; letter-spacing: 10px;
-      color: var(--g3); text-align: center;
-      background: var(--g9); border: 1px solid var(--g8);
-      border-radius: 10px; padding: 14px 8px; margin-bottom: 12px;
-      font-variant-numeric: tabular-nums;
+      font-size: 36px; font-weight: 900; letter-spacing: 10px; color: var(--g3);
+      text-align: center; background: var(--g9); border: 1px solid var(--g8);
+      border-radius: 10px; padding: 14px 8px; margin-bottom: 12px; font-variant-numeric: tabular-nums;
     }
     .btn-outline {
       display: block; width: 100%; padding: 9px;
@@ -301,23 +191,19 @@
     .btn-outline:hover { background: var(--g9); }
 
     /* QR */
-    .qr-wrap {
-      background: #fff; border: 1.5px solid var(--g9); border-radius: 11px;
-      padding: 10px; display: inline-block; margin-bottom: 10px;
-    }
+    .qr-wrap { background: #fff; border: 1.5px solid var(--g9); border-radius: 11px; padding: 10px; display: inline-block; margin-bottom: 10px; }
     .qr-wrap img { display: block; width: 140px; height: 140px; }
-    .scanner-link {
-      font-size: 11px; color: var(--text3); word-break: break-all;
-      line-height: 1.5; margin-bottom: 10px;
-    }
+    .scanner-link { font-size: 11px; color: var(--text3); word-break: break-all; line-height: 1.5; margin-bottom: 10px; }
 
     /* Devices */
-    .device-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px;
-    }
+    .device-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
     .device-row:last-child { border-bottom: none; }
-    .device-icon { font-size: 17px; flex-shrink: 0; }
+    .device-ic {
+      width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center;
+      justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0;
+    }
+    .device-ic.laptop { background: var(--g9); color: var(--g3); }
+    .device-ic.phone  { background: #e3f2fd; color: #1565c0; }
     .device-name { font-weight: 600; color: var(--text); flex: 1; }
     .device-dot { width: 7px; height: 7px; border-radius: 50%; background: #ddd; flex-shrink: 0; }
     .device-dot.online  { background: var(--g6); box-shadow: 0 0 5px rgba(67,160,71,.45); }
@@ -325,30 +211,17 @@
     .device-status { font-size: 11px; color: var(--text3); }
     .no-devices { font-size: 12px; color: var(--text3); padding: 8px 0; }
 
-    /* ── Scan Queue ── */
-    .section-card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 13px; overflow: hidden; box-shadow: var(--sh1); margin-bottom: 18px;
-    }
-    .section-head {
-      padding: 15px 20px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    }
+    /* Scan Queue */
+    .section-card { background: var(--white); border: 1px solid var(--border); border-radius: 13px; overflow: hidden; box-shadow: var(--sh1); margin-bottom: 18px; }
+    .section-head { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .section-head-title { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.1px; }
-    .section-count {
-      font-size: 11px; font-weight: 700; background: var(--g5); color: #fff;
-      padding: 2px 9px; border-radius: 100px;
-    }
+    .section-count { font-size: 11px; font-weight: 700; background: var(--g5); color: #fff; padding: 2px 9px; border-radius: 100px; }
     .section-count.zero { background: #eee; color: var(--text3); }
     .section-hint { font-size: 12px; color: var(--text3); margin-left: auto; }
     .section-body { padding: 18px 20px; }
-
     .queue-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 640px) { .queue-columns { grid-template-columns: 1fr; } }
-    .queue-col-label {
-      font-size: 10px; font-weight: 700; color: var(--text3);
-      text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px;
-    }
+    .queue-col-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
 
     /* Scan cards */
     .scan-card {
@@ -357,119 +230,71 @@
       cursor: pointer; transition: box-shadow .15s, border-color .15s;
       margin-bottom: 8px; position: relative; overflow: hidden;
     }
-    /* Left color stripe */
-    .scan-card::before {
-      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-      width: 3px; border-radius: 3px 0 0 3px; background: #ddd;
-    }
+    .scan-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; background: #ddd; }
     .scan-card:not(.opened-card)::before { background: var(--g5); }
     .scan-card.selected::before { background: var(--gold); }
     .scan-card:hover { box-shadow: var(--sh2); border-color: rgba(0,0,0,.13); }
     .scan-card.selected { border-color: rgba(200,147,10,.3); background: #fffcf2; }
     .scan-card.opened-card { opacity: .6; }
     .scan-card.opened-card:hover { opacity: 1; }
-
     .scan-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
     .scan-details { font-size: 12px; color: var(--text3); }
     .scan-scanner { font-size: 11px; color: var(--text3); margin-top: 3px; }
     .scan-time { font-size: 11px; color: #c0c0c0; }
-    .scan-selected-badge {
-      position: absolute; top: 9px; right: 11px;
-      font-size: 10px; font-weight: 700; color: var(--gold);
-      background: var(--gold-bg); border: 1px solid rgba(200,147,10,.28);
-      padding: 2px 8px; border-radius: 100px;
-    }
-    .scan-new-badge {
-      position: absolute; top: 9px; right: 11px;
-      font-size: 10px; font-weight: 700; color: #fff; background: var(--g5);
-      padding: 2px 8px; border-radius: 100px;
-    }
-    .queue-empty {
-      font-size: 13px; color: var(--text3); text-align: center;
-      padding: 22px 0; border: 1.5px dashed rgba(0,0,0,.1); border-radius: 9px;
-    }
+    .scan-selected-badge { position: absolute; top: 9px; right: 11px; font-size: 10px; font-weight: 700; color: var(--gold); background: var(--gold-bg); border: 1px solid rgba(200,147,10,.28); padding: 2px 8px; border-radius: 100px; }
+    .scan-new-badge { position: absolute; top: 9px; right: 11px; font-size: 10px; font-weight: 700; color: #fff; background: var(--g5); padding: 2px 8px; border-radius: 100px; }
+    .queue-empty { font-size: 13px; color: var(--text3); text-align: center; padding: 22px 0; border: 1.5px dashed rgba(0,0,0,.1); border-radius: 9px; }
 
-    /* ── How it works (dark) ── */
-    .how-section {
-      background: var(--g1);
-      border: 1px solid rgba(255,255,255,.04);
-      border-radius: 13px; padding: 22px; margin-bottom: 18px;
-    }
+    /* How it works (dark) */
+    .how-section { background: var(--g1); border: 1px solid rgba(255,255,255,.04); border-radius: 13px; padding: 22px; margin-bottom: 18px; }
     .how-section .card-label { color: rgba(255,255,255,.35); }
-    .how-steps {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(182px, 1fr));
-      gap: 11px; margin-top: 4px;
-    }
-    .how-step {
-      background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07);
-      border-radius: 10px; padding: 15px;
-      transition: background .15s;
-    }
+    .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(182px, 1fr)); gap: 11px; margin-top: 4px; }
+    .how-step { background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; padding: 16px; transition: background .15s; }
     .how-step:hover { background: rgba(255,255,255,.075); }
     .how-step-num {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 19px; height: 19px; border-radius: 50%;
-      background: var(--g5); color: #fff; font-size: 10px; font-weight: 800;
-      margin-bottom: 7px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--g5); color: #fff; font-size: 10px; font-weight: 800; margin-bottom: 10px;
     }
-    .how-step-icon { font-size: 21px; margin-bottom: 5px; }
     .how-step-title { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.88); margin-bottom: 4px; }
-    .how-step-desc { font-size: 11px; color: rgba(255,255,255,.42); line-height: 1.65; }
+    .how-step-desc  { font-size: 11px; color: rgba(255,255,255,.42); line-height: 1.65; }
 
-    /* ── Extension setup ── */
+    /* Extension setup */
     .ext-card { margin-bottom: 18px; }
     .ext-download {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       width: 100%; padding: 12px 20px;
       background: var(--g5); color: #fff; border: none; border-radius: 10px;
       font-family: inherit; font-size: 14px; font-weight: 700;
-      text-decoration: none; margin-bottom: 18px;
-      transition: background .18s;
+      text-decoration: none; margin-bottom: 18px; transition: background .18s;
     }
     .ext-download:hover { background: var(--g3); }
     .steps-list { list-style: none; counter-reset: step; }
     .steps-list li {
-      counter-increment: step;
-      display: flex; gap: 10px; align-items: flex-start;
+      counter-increment: step; display: flex; gap: 10px; align-items: flex-start;
       margin-bottom: 8px; font-size: 13px; color: var(--text2); line-height: 1.5;
     }
     .steps-list li::before {
-      content: counter(step);
-      background: var(--g9); color: var(--g4);
+      content: counter(step); background: var(--g9); color: var(--g4);
       min-width: 20px; height: 20px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-size: 10px; font-weight: 800; flex-shrink: 0; margin-top: 2px;
     }
-    .steps-list code {
-      background: var(--g9); padding: 1px 6px; border-radius: 4px;
-      font-size: 11px; color: var(--g3);
-    }
+    .steps-list code { background: var(--g9); padding: 1px 6px; border-radius: 4px; font-size: 11px; color: var(--g3); }
     .steps-list strong { color: var(--text); }
 
-    /* ── Footer ── */
-    footer {
-      background: var(--g1); color: rgba(255,255,255,.28);
-      text-align: center; padding: 22px 24px; font-size: 11px; letter-spacing: .3px;
-    }
+    /* Footer */
+    footer { background: var(--g1); color: rgba(255,255,255,.28); text-align: center; padding: 22px 24px; font-size: 11px; letter-spacing: .3px; }
     footer strong { color: rgba(255,255,255,.58); font-weight: 600; }
     .footer-tagline { color: rgba(249,168,37,.55); font-style: italic; margin-top: 5px; }
-
-    /* ── Interactive Canvas ── */
-    #login-canvas {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      pointer-events: none; z-index: 0;
-    }
   </style>
 </head>
 <body>
 
-<!-- ══ NAV ══ -->
+<!-- NAV -->
 <nav>
   <div class="nav-brand">
-    <img class="nav-logo"
-         src="https://ncnmo.org/wp-content/uploads/2024/03/ncnmologo.png"
-         alt="NCNMO" onerror="this.style.display='none'">
+    <img class="nav-logo" src="https://ncnmo.org/wp-content/uploads/2024/03/ncnmologo.png" alt="NCNMO" onerror="this.style.display='none'">
     <div>
       <div class="nav-title-main">Scan to Fill</div>
       <div class="nav-title-sub">NCNMO Medical Mission</div>
@@ -483,205 +308,179 @@
   <button id="logout-btn" onclick="logout()">← Switch user</button>
 </nav>
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div class="screen active" id="screen-login">
   <canvas id="login-canvas"></canvas>
   <div class="login-center">
 
-    <!-- Logo + org name -->
     <div class="login-brand">
-      <img class="login-logo"
-           src="https://ncnmo.org/wp-content/uploads/2024/03/ncnmologo.png"
-           alt="NCNMO Logo"
-           onerror="this.style.display='none'">
-      <div class="login-org-name">
-        National Council of Nigerian<br>Muslim Organizations
-      </div>
+      <img class="login-logo" src="https://ncnmo.org/wp-content/uploads/2024/03/ncnmologo.png" alt="NCNMO Logo" onerror="this.style.display='none'">
+      <div class="login-org-name">National Council of Nigerian<br>Muslim Organizations</div>
     </div>
 
     <div class="login-rule"></div>
 
-    <!-- Card -->
     <div class="login-card">
       <div class="login-card-header">
-        <span class="login-mission-badge">☪&nbsp; Medical Mission</span>
-        <span class="login-crescent">🌙</span>
+        <span class="login-mission-badge">Medical Mission</span>
+        <span class="login-card-header-symbol">☽ ✦</span>
       </div>
       <div class="login-card-body">
         <h1>Patient Intake Scanner</h1>
         <p>Enter your name to access your room and start digitizing patient forms automatically.</p>
-
         <div class="input-wrap">
-          <span class="input-icon">👤</span>
+          <span class="input-label">&#8250;</span>
           <input id="name-input" type="text" placeholder="Your name (e.g. Aisha)" autocomplete="off">
         </div>
         <button class="btn-primary" id="start-btn">
-          Get Started <span class="btn-arrow">→</span>
+          Get Started <span class="btn-arrow">&#8594;</span>
         </button>
-
         <div class="login-rule-thin"></div>
-
         <div class="login-features">
-          <div class="login-feat"><span class="login-feat-icon">📷</span> Photo scanning</div>
-          <div class="login-feat"><span class="login-feat-icon">🤖</span> AI extraction</div>
-          <div class="login-feat"><span class="login-feat-icon">✅</span> Auto form fill</div>
-          <div class="login-feat"><span class="login-feat-icon">🔁</span> Instant reload</div>
+          <div class="login-feat"><div class="login-feat-dot"></div> Photo scanning</div>
+          <div class="login-feat"><div class="login-feat-dot"></div> AI extraction</div>
+          <div class="login-feat"><div class="login-feat-dot"></div> Auto form fill</div>
+          <div class="login-feat"><div class="login-feat-dot"></div> Instant reload</div>
         </div>
       </div>
     </div>
 
-    <div class="login-tagline">Propagation of Islam &amp; Service to Humanity</div>
+    <div class="login-tagline">&#x22;Propagation of Islam &#38; Service to Humanity&#x22;</div>
   </div>
 </div>
 
-<!-- ══ DASHBOARD ══ -->
+<!-- DASHBOARD -->
 <div class="screen" id="screen-dashboard">
   <div class="dashboard">
 
-    <!-- Welcome -->
     <div class="welcome-bar">
       <div>
         <div id="welcome-text">Welcome!</div>
         <div class="welcome-sub">Your room is active and ready to receive scans.</div>
       </div>
-      <div class="mission-pill">🌙 Mission Active</div>
+      <div class="mission-pill">
+        <div class="mission-pill-dot"></div>
+        Mission Active
+      </div>
     </div>
 
-    <!-- Notification banners -->
     <div id="notif-request" style="display:none">
-      🔔 Get notified when a scan arrives
-      <button id="notif-allow-btn">Allow Notifications</button>
+      Notify me when a scan arrives
+      <button id="notif-allow-btn">Allow</button>
     </div>
     <div id="notif-banner" style="display:none">
-      <span id="notif-banner-text">📄 New scan arrived!</span>
+      <span id="notif-banner-text">New scan arrived!</span>
       <button id="notif-dismiss-btn">Dismiss</button>
     </div>
 
-    <!-- Room + QR + Devices -->
     <div class="info-row">
       <div class="card">
         <div class="card-label">Your Room Code</div>
         <div class="room-display" id="room-display">—</div>
         <button class="btn-outline" id="copy-room-btn">Copy Code</button>
       </div>
-
       <div class="card" style="text-align:center">
         <div class="card-label">Phone Scanner</div>
         <div class="qr-wrap"><img id="qr-img" src="" alt="QR Code"></div>
         <div class="scanner-link" id="scanner-link">—</div>
         <button class="btn-outline" id="copy-btn">Copy phone link</button>
       </div>
-
       <div class="card">
         <div class="card-label">Connected Devices</div>
-        <div id="devices-list"><p class="no-devices">Loading…</p></div>
+        <div id="devices-list"><p class="no-devices">Loading...</p></div>
       </div>
     </div>
 
-    <!-- Scan Queue -->
     <div class="section-card">
       <div class="section-head">
-        <span class="section-head-title">📬 Scan Queue</span>
+        <span class="section-head-title">Scan Queue</span>
         <span class="section-count zero" id="unopened-count">0 new</span>
-        <span class="section-hint">Click a scan → pushes to the extension</span>
+        <span class="section-hint">Click a scan to push it to the extension</span>
       </div>
       <div class="section-body">
         <div class="queue-columns">
           <div>
-            <div class="queue-col-label">📬 Unopened</div>
+            <div class="queue-col-label">Unopened</div>
             <div id="unopened-list"><p class="queue-empty">No new scans yet.</p></div>
           </div>
           <div>
-            <div class="queue-col-label">📂 Opened</div>
+            <div class="queue-col-label">Opened</div>
             <div id="opened-list"><p class="queue-empty">Nothing opened yet.</p></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- How it works (dark section) -->
     <div class="how-section">
       <div class="card-label">How it works</div>
       <div class="how-steps">
         <div class="how-step">
           <div class="how-step-num">1</div>
-          <div class="how-step-icon">💻</div>
           <div class="how-step-title">Set up the laptop</div>
-          <div class="how-step-desc">Log in to get a permanent room code. Install the Chrome extension and enter the code once — it stays connected.</div>
+          <div class="how-step-desc">Log in to get a permanent room code. Install the Chrome extension and enter the code once.</div>
         </div>
         <div class="how-step">
           <div class="how-step-num">2</div>
-          <div class="how-step-icon">📱</div>
           <div class="how-step-title">Connect a phone</div>
-          <div class="how-step-desc">Scan the QR or open mobile.html and type the room code. Multiple phones can join the same room.</div>
+          <div class="how-step-desc">Scan the QR or open mobile.html and type the room code. Multiple phones can join.</div>
         </div>
         <div class="how-step">
           <div class="how-step-num">3</div>
-          <div class="how-step-icon">📷</div>
           <div class="how-step-title">Scan the form</div>
-          <div class="how-step-desc">Tap Take Photo and photograph the patient's paper intake form. AI reads the handwriting instantly.</div>
+          <div class="how-step-desc">Tap Take Photo and photograph the paper intake form. AI reads the handwriting instantly.</div>
         </div>
         <div class="how-step">
           <div class="how-step-num">4</div>
-          <div class="how-step-icon">✏️</div>
           <div class="how-step-title">Review &amp; confirm</div>
           <div class="how-step-desc">Check every extracted field on the phone, fix any mistakes, then tap Confirm &amp; Fill Form.</div>
         </div>
         <div class="how-step">
           <div class="how-step-num">5</div>
-          <div class="how-step-icon">✅</div>
           <div class="how-step-title">Form fills itself</div>
-          <div class="how-step-desc">The NCNMO web form on the laptop fills in automatically — name, gender, marital status, date of birth, everything.</div>
+          <div class="how-step-desc">The NCNMO web form on the laptop fills in automatically — name, gender, date of birth, everything.</div>
         </div>
         <div class="how-step">
           <div class="how-step-num">6</div>
-          <div class="how-step-icon">🔁</div>
           <div class="how-step-title">Next patient, instantly</div>
-          <div class="how-step-desc">The laptop loads a fresh blank form on its own. Scan the next patient's form and the cycle repeats.</div>
+          <div class="how-step-desc">Laptop loads a fresh blank form. Scan the next patient's form and the cycle repeats.</div>
         </div>
       </div>
     </div>
 
-    <!-- Extension setup -->
     <div class="card ext-card">
       <div class="card-label">Chrome Extension Setup</div>
-      <a class="ext-download" href="/download/extension">⬇ Download Extension (.zip)</a>
+      <a class="ext-download" href="/download/extension">&#8659; Download Extension (.zip)</a>
       <ol class="steps-list">
         <li>Download and <strong>unzip</strong> the file above</li>
         <li>Go to <code>chrome://extensions</code> in Chrome</li>
         <li>Enable <strong>Developer mode</strong> (top-right toggle)</li>
-        <li>Click <strong>Load unpacked</strong> → select the unzipped folder</li>
-        <li>Click the extension icon → enter room code <code id="room-code-hint">—</code></li>
-        <li>Click a scan below → then hit <strong>Fill Page Now</strong> in the extension</li>
+        <li>Click <strong>Load unpacked</strong> &rarr; select the unzipped folder</li>
+        <li>Click the extension icon &rarr; enter room code <code id="room-code-hint">—</code></li>
+        <li>Click a scan below &rarr; then hit <strong>Fill Page Now</strong> in the extension</li>
       </ol>
     </div>
 
   </div>
 </div>
 
-<!-- ══ FOOTER ══ -->
 <footer>
-  <strong>NCNMO</strong> · National Council of Nigerian Muslim Organizations<br>
-  <div class="footer-tagline">"Propagation of Islam &amp; Service to Humanity"</div>
+  <strong>NCNMO</strong> &middot; National Council of Nigerian Muslim Organizations<br>
+  <div class="footer-tagline">&ldquo;Propagation of Islam &amp; Service to Humanity&rdquo;</div>
 </footer>
 
 <script>
   const SERVER = window.location.origin;
 
-  // ── Server health ────────────────────────────────────────
   fetch('/api/latest').then(() => {
     document.getElementById('nav-dot').classList.add('ok');
     document.getElementById('nav-status').textContent = 'Server online';
   }).catch(() => { document.getElementById('nav-status').textContent = 'Server offline'; });
 
-  // ── Helpers ──────────────────────────────────────────────
-  function esc(s) {
-    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function timeAgo(ts) {
     const s = Math.floor((Date.now()-ts)/1000);
-    if (s<60)    return 'just now';
-    if (s<3600)  return Math.floor(s/60)+'m ago';
+    if (s<60) return 'just now';
+    if (s<3600) return Math.floor(s/60)+'m ago';
     if (s<86400) return Math.floor(s/3600)+'h ago';
     return new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }
@@ -692,7 +491,6 @@
   function scannerUrl(room){ return `${SERVER}/mobile.html?room=${encodeURIComponent(room)}`; }
   function qrSrc(url){ return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(url)}&margin=0&color=1b5e20`; }
 
-  // ── Room ─────────────────────────────────────────────────
   let liveRoom=null, selectedId=null, liveSSE=null;
 
   function updateRoomDisplay(room){
@@ -703,12 +501,11 @@
     document.getElementById('qr-img').src=qrSrc(url);
   }
 
-  // ── Dashboard ─────────────────────────────────────────────
   function showDashboard(name,room){
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-dashboard').classList.add('active');
     document.getElementById('logout-btn').style.display='block';
-    document.getElementById('welcome-text').textContent=`Welcome, ${name}! 👋`;
+    document.getElementById('welcome-text').textContent=`Welcome, ${name}!`;
     liveRoom=room;
     updateRoomDisplay(room);
     setupNotifications();
@@ -717,7 +514,6 @@
     setInterval(refreshDevices,30000);
   }
 
-  // ── SSE ───────────────────────────────────────────────────
   function startSSE(room){
     if(liveSSE) liveSSE.close();
     liveSSE=new EventSource(`/api/stream?room=${encodeURIComponent(room)}`);
@@ -740,7 +536,6 @@
 
   async function refreshAll(){ if(!liveRoom) return; await Promise.all([refreshScans(),refreshDevices()]); }
 
-  // ── Scans ─────────────────────────────────────────────────
   async function refreshScans(){
     try{ const r=await fetch(`/api/scans?room=${liveRoom}`); renderScans(await r.json()); }catch{}
   }
@@ -760,14 +555,12 @@
     const name=[f['First Name'],f['Last Name']].filter(Boolean).join(' ')||'(unknown)';
     const details=[f['Gender (Sex)'],f['Age']?`${f['Age']} yrs`:'',f['Marital Status']].filter(Boolean).join(' · ');
     const isSel=scan.id===selectedId;
-    const badge=isSel
-      ?'<span class="scan-selected-badge">✓ Selected</span>'
-      :(!isOpened?'<span class="scan-new-badge">New</span>':'');
+    const badge=isSel?'<span class="scan-selected-badge">Selected</span>':(!isOpened?'<span class="scan-new-badge">New</span>':'');
     return `<div class="scan-card${isSel?' selected':''}${isOpened&&!isSel?' opened-card':''}" data-id="${esc(scan.id)}">
       ${badge}
       <div class="scan-name">${esc(name)}</div>
       ${details?`<div class="scan-details">${esc(details)}</div>`:''}
-      <div class="scan-scanner">📱 ${esc(scan.scannerName||'Phone')}</div>
+      <div class="scan-scanner">${esc(scan.scannerName||'Phone')}</div>
       <div class="scan-time">${timeAgo(scan.timestamp)}</div>
     </div>`;
   }
@@ -779,26 +572,26 @@
     }catch{}
   }
 
-  // ── Devices ──────────────────────────────────────────────
   async function refreshDevices(){
     try{ const r=await fetch(`/api/room-status?room=${liveRoom}`); renderDevices(await r.json()); }catch{}
   }
-  function deviceRow(icon,name,online){
+  function deviceRow(type,name,online){
+    const ic=type==='laptop'?'L':'P';
+    const cls=type==='laptop'?'laptop':'phone';
     return `<div class="device-row">
-      <div class="device-icon">${icon}</div>
+      <div class="device-ic ${cls}">${ic}</div>
       <div class="device-name">${esc(name)}</div>
       <div class="device-dot ${online?'online':'offline'}"></div>
       <span class="device-status">${online?'Online':'Offline'}</span>
     </div>`;
   }
   function renderDevices({laptop,phones}){
-    const rows=[deviceRow('💻',laptop?laptop.name:'No laptop',laptop?.online||false)];
-    if(phones&&phones.length) phones.forEach(p=>rows.push(deviceRow('📱',p.name,p.online)));
-    else rows.push(deviceRow('📱','No phone connected',false));
+    const rows=[deviceRow('laptop',laptop?laptop.name:'No laptop',laptop?.online||false)];
+    if(phones&&phones.length) phones.forEach(p=>rows.push(deviceRow('phone',p.name,p.online)));
+    else rows.push(deviceRow('phone','No phone connected',false));
     document.getElementById('devices-list').innerHTML=rows.join('');
   }
 
-  // ── Notifications ─────────────────────────────────────────
   function setupNotifications(){
     if(!('Notification' in window)||Notification.permission!=='default') return;
     document.getElementById('notif-request').style.display='flex';
@@ -807,18 +600,15 @@
     });
   }
   function showScanBanner(name){
-    document.getElementById('notif-banner-text').textContent=`📄 New scan for ${name} — click it below to send to the extension.`;
+    document.getElementById('notif-banner-text').textContent=`New scan for ${name} — click it below to send to the extension.`;
     document.getElementById('notif-banner').style.display='flex';
   }
-  document.getElementById('notif-dismiss-btn').addEventListener('click',()=>{
-    document.getElementById('notif-banner').style.display='none';
-  });
+  document.getElementById('notif-dismiss-btn').addEventListener('click',()=>{ document.getElementById('notif-banner').style.display='none'; });
   function sendBrowserNotification(name){
     if(!('Notification' in window)||Notification.permission!=='granted') return;
-    new Notification('📄 New Scan',{body:`${name} — click it on the website to send to the extension.`});
+    new Notification('New Scan',{body:`${name} — click it on the website to send to the extension.`});
   }
 
-  // ── Login / logout ────────────────────────────────────────
   async function login(name){
     name=name.trim(); if(!name) return;
     let room;
@@ -839,30 +629,28 @@
     liveRoom=null; selectedId=null;
   }
 
-  // ── Events ───────────────────────────────────────────────
   document.getElementById('start-btn').addEventListener('click',()=>login(document.getElementById('name-input').value));
   document.getElementById('name-input').addEventListener('keydown',e=>{ if(e.key==='Enter') login(document.getElementById('name-input').value); });
   document.getElementById('copy-room-btn').addEventListener('click',()=>{
     navigator.clipboard.writeText(document.getElementById('room-display').textContent).then(()=>{
-      document.getElementById('copy-room-btn').textContent='✓ Copied!';
+      document.getElementById('copy-room-btn').textContent='Copied!';
       setTimeout(()=>{ document.getElementById('copy-room-btn').textContent='Copy Code'; },1500);
     });
   });
   document.getElementById('copy-btn').addEventListener('click',()=>{
     navigator.clipboard.writeText(document.getElementById('scanner-link').textContent).then(()=>{
-      document.getElementById('copy-btn').textContent='✓ Copied!';
+      document.getElementById('copy-btn').textContent='Copied!';
       setTimeout(()=>{ document.getElementById('copy-btn').textContent='Copy phone link'; },1500);
     });
   });
 
-  // ── Auto-login ───────────────────────────────────────────
   window.addEventListener('DOMContentLoaded',()=>{
     const s=JSON.parse(localStorage.getItem('stf-user')||'{}');
     if(s.name) login(s.name);
   });
 </script>
 
-<!-- ══ INTERACTIVE ISLAMIC GEOMETRY BACKGROUND ══ -->
+<!-- BLOOKET-STYLE CONNECTED NODE NETWORK -->
 <script>
 (function () {
   const screen = document.getElementById('screen-login');
@@ -870,164 +658,128 @@
   const ctx    = canvas.getContext('2d');
 
   let W = 0, H = 0;
-  let tX = 0, tY = 0, sX = 0, sY = 0;
+  let mouseX = -9999, mouseY = -9999;
 
   function resize() {
     W = canvas.width  = screen.offsetWidth;
     H = canvas.height = screen.offsetHeight;
-    tX = sX = W / 2;
-    tY = sY = H / 2;
-  }
-
-  // Crescent moon — outer circle minus offset inner circle (evenodd rule)
-  function drawCrescent(r) {
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.arc(r * 0.42, r * 0.06, r * 0.74, 0, Math.PI * 2, true);
-    ctx.fill('evenodd');
-  }
-
-  // 8-pointed Islamic star (Khatam)
-  function drawStar8(r) {
-    const inner = r * 0.40;
-    ctx.beginPath();
-    for (let i = 0; i < 16; i++) {
-      const a   = (i * Math.PI / 8) - Math.PI / 2;
-      const rad = i % 2 === 0 ? r : inner;
-      i ? ctx.lineTo(rad * Math.cos(a), rad * Math.sin(a))
-        : ctx.moveTo(rad * Math.cos(a), rad * Math.sin(a));
+    // Reposition home points to fit new size
+    for (const n of nodes) {
+      n.hx = n.fx * W;
+      n.hy = n.fy * H;
     }
-    ctx.closePath();
-    ctx.fill();
   }
 
-  // 4-pointed diamond outline
-  function drawDiamond(r) {
-    ctx.beginPath();
-    ctx.moveTo(0, -r);
-    ctx.lineTo(r * 0.55, 0);
-    ctx.lineTo(0,  r);
-    ctx.lineTo(-r * 0.55, 0);
-    ctx.closePath();
-    ctx.lineWidth = Math.max(1, r * 0.10);
-    ctx.stroke();
-  }
+  // Tuning knobs
+  const CONNECT  = 145;   // max px to draw a line between two nodes
+  const REPEL_R  = 130;   // mouse repulsion radius
+  const REPEL_F  = 7.5;   // repulsion force magnitude
+  const SPRING   = 0.017; // spring force back to home
+  const DAMPING  = 0.86;  // velocity damping each frame
+  const DRIFT    = 0.18;  // home-position drift per frame (organic movement)
+  const COUNT    = window.innerWidth < 600 ? 55 : 88;
 
-  // Halo ring
-  function drawRing(r) {
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.82, 0, Math.PI * 2);
-    ctx.lineWidth = Math.max(1, r * 0.11);
-    ctx.stroke();
-  }
+  // Node pool — fx/fy are normalised home positions (0-1)
+  const nodes = Array.from({ length: COUNT }, () => {
+    const fx = Math.random(), fy = Math.random();
+    return {
+      fx, fy,             // normalised home (used on resize)
+      hx: fx, hy: fy,    // actual home (px) — set in resize()
+      x:  fx, y:  fy,    // current position (px) — set in resize()
+      vx: 0,  vy: 0,
+      r: 1.5 + Math.random() * 1.8,
+    };
+  });
 
-  // Tiny filled dot
-  function drawDot(r) {
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // 6-petal rosette (evenodd overlapping circles)
-  function drawRosette(r) {
-    const cr = r * 0.40;
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const a  = (i * Math.PI) / 3;
-      const cx = cr * Math.cos(a);
-      const cy = cr * Math.sin(a);
-      ctx.moveTo(cx + cr, cy);
-      ctx.arc(cx, cy, cr, 0, Math.PI * 2);
-    }
-    ctx.fill('evenodd');
-  }
-
-  const TYPES  = ['crescent','crescent','star8','star8','diamond','ring','dot','rosette'];
-  const COLORS = [
-    'rgba(255,255,255,1)',
-    'rgba(255,215,80,1)',
-    'rgba(160,255,170,1)',
-  ];
-
-  const COUNT = 50;
-  const particles = Array.from({ length: COUNT }, () => ({
-    nx:     Math.random(),
-    ny:     Math.random(),
-    size:   14 + Math.random() * 62,
-    alpha:  0.03 + Math.random() * 0.14,
-    rot:    Math.random() * Math.PI * 2,
-    rotSpd: (Math.random() - 0.5) * 0.0045,
-    vx:     (Math.random() - 0.5) * 0.00020,
-    vy:     (Math.random() - 0.5) * 0.00020,
-    depth:  0.12 + Math.random() * 0.88,
-    type:   TYPES[Math.floor(Math.random() * TYPES.length)],
-    color:  COLORS[Math.random() < 0.65 ? 0 : Math.random() < 0.5 ? 1 : 2],
-  }));
-
-  function draw() {
-    requestAnimationFrame(draw);
+  function frame() {
+    requestAnimationFrame(frame);
     ctx.clearRect(0, 0, W, H);
 
-    sX += (tX - sX) * 0.055;
-    sY += (tY - sY) * 0.055;
-    const mx = (sX / W - 0.5) * 2;
-    const my = (sY / H - 0.5) * 2;
-
-    for (const p of particles) {
-      p.nx += p.vx;  p.ny += p.vy;
-      if (p.nx < -0.12) p.nx = 1.12;
-      if (p.nx >  1.12) p.nx = -0.12;
-      if (p.ny < -0.12) p.ny = 1.12;
-      if (p.ny >  1.12) p.ny = -0.12;
-      p.rot += p.rotSpd;
-
-      const px = p.nx * W + mx * p.depth * 42;
-      const py = p.ny * H + my * p.depth * 42;
-
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(p.rot);
-      ctx.globalAlpha = p.alpha;
-      ctx.fillStyle   = p.color;
-      ctx.strokeStyle = p.color;
-
-      const r = p.size / 2;
-      switch (p.type) {
-        case 'crescent': drawCrescent(r); break;
-        case 'star8':    drawStar8(r);    break;
-        case 'diamond':  drawDiamond(r);  break;
-        case 'ring':     drawRing(r);     break;
-        case 'dot':      drawDot(r);      break;
-        case 'rosette':  drawRosette(r);  break;
+    /* ── update ── */
+    for (const n of nodes) {
+      // Mouse repulsion
+      const dx = n.x - mouseX, dy = n.y - mouseY;
+      const d2 = dx*dx + dy*dy;
+      if (d2 < REPEL_R * REPEL_R && d2 > 0) {
+        const d = Math.sqrt(d2);
+        const f = (1 - d / REPEL_R) * REPEL_F;
+        n.vx += (dx / d) * f;
+        n.vy += (dy / d) * f;
       }
-      ctx.restore();
+
+      // Spring towards home
+      n.vx += (n.hx - n.x) * SPRING;
+      n.vy += (n.hy - n.y) * SPRING;
+
+      // Damping + integrate
+      n.vx *= DAMPING;  n.vy *= DAMPING;
+      n.x  += n.vx;     n.y  += n.vy;
+
+      // Drift home slowly for organic feel
+      n.hx += (Math.random() - 0.5) * DRIFT;
+      n.hy += (Math.random() - 0.5) * DRIFT;
+      n.hx = Math.max(10, Math.min(W - 10, n.hx));
+      n.hy = Math.max(10, Math.min(H - 10, n.hy));
+    }
+
+    /* ── draw lines ── */
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const a = nodes[i];
+      for (let j = i + 1; j < nodes.length; j++) {
+        const b = nodes[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < CONNECT) {
+          const alpha = (1 - d / CONNECT) * 0.30;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = `rgba(180,230,185,${alpha})`;
+          ctx.lineWidth   = 0.75;
+          ctx.stroke();
+        }
+      }
+    }
+
+    /* ── draw nodes ── */
+    for (const n of nodes) {
+      // Slight glow when displaced far from home
+      const disp = Math.sqrt((n.x-n.hx)**2 + (n.y-n.hy)**2);
+      if (disp > 8) {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(160,230,170,${Math.min(disp/200, 0.18)})`;
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(220,245,222,0.75)';
+      ctx.fill();
     }
   }
 
-  function setTarget(x, y) { tX = x; tY = y; }
+  /* ── input ── */
+  function setMouse(x, y) { mouseX = x; mouseY = y; }
+  function clearMouse()   { mouseX = -9999; mouseY = -9999; }
 
   screen.addEventListener('mousemove', e => {
     const b = screen.getBoundingClientRect();
-    setTarget(e.clientX - b.left, e.clientY - b.top);
+    setMouse(e.clientX - b.left, e.clientY - b.top);
   });
+  screen.addEventListener('mouseleave', clearMouse);
 
   screen.addEventListener('touchmove', e => {
     const b = screen.getBoundingClientRect();
-    setTarget(e.touches[0].clientX - b.left, e.touches[0].clientY - b.top);
+    setMouse(e.touches[0].clientX - b.left, e.touches[0].clientY - b.top);
   }, { passive: true });
-
-  if (typeof DeviceOrientationEvent !== 'undefined') {
-    window.addEventListener('deviceorientation', e => {
-      if (e.gamma == null) return;
-      const gx = Math.max(-35, Math.min(35, e.gamma)) / 35;
-      const gy = Math.max(-35, Math.min(35, (e.beta || 0) - 45)) / 35;
-      setTarget(W / 2 + gx * W * 0.45, H / 2 + gy * H * 0.45);
-    });
-  }
+  screen.addEventListener('touchend', clearMouse);
 
   window.addEventListener('resize', resize);
   resize();
-  draw();
+  // Set real px positions after resize sets W/H
+  for (const n of nodes) { n.x = n.hx; n.y = n.hy; }
+  frame();
 })();
 </script>
 </body>
