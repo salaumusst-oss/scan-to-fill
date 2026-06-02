@@ -176,6 +176,22 @@
     }
     .queue-empty { font-size: 13px; color: #444; padding: 16px 0; text-align: center; }
 
+    /* ── How it works ── */
+    .how-card { margin-bottom: 24px; }
+    .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 4px; }
+    .how-step {
+      background: #12121f; border: 1px solid #1e1e35;
+      border-radius: 14px; padding: 20px 18px;
+    }
+    .how-step-icon  { font-size: 28px; margin-bottom: 10px; }
+    .how-step-title { font-size: 13px; font-weight: 800; color: #e8e8f0; margin-bottom: 6px; }
+    .how-step-desc  { font-size: 12px; color: #555; line-height: 1.6; }
+    .how-step-num {
+      display: inline-block; width: 20px; height: 20px; border-radius: 50%;
+      background: #2a2a45; color: #7eb8f7; font-size: 11px; font-weight: 800;
+      text-align: center; line-height: 20px; margin-bottom: 10px;
+    }
+
     /* ── Extension setup ── */
     .ext-card { margin-bottom: 24px; }
     .ext-download {
@@ -222,6 +238,28 @@
     <p>NCNMO Medical Mission patient form scanner.<br>Enter your name to get started.</p>
     <input type="text" id="name-input" placeholder="Your name (e.g. Jane)" autocomplete="off">
     <button class="btn-green" id="start-btn">Get Started →</button>
+
+    <div style="margin-top:28px;border-top:1px solid #1a1a2e;padding-top:20px;text-align:left">
+      <p style="font-size:10px;font-weight:800;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">How it works</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#666;line-height:1.5">
+          <span style="font-size:16px;flex-shrink:0">📷</span>
+          <span>Scanner photographs the paper patient form on their phone</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#666;line-height:1.5">
+          <span style="font-size:16px;flex-shrink:0">🤖</span>
+          <span>Claude AI reads the handwriting and extracts every field</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#666;line-height:1.5">
+          <span style="font-size:16px;flex-shrink:0">✅</span>
+          <span>The NCNMO web form fills itself on the laptop automatically</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#666;line-height:1.5">
+          <span style="font-size:16px;flex-shrink:0">🔁</span>
+          <span>Laptop navigates to the next blank form — scanner shoots the next one</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -278,6 +316,56 @@
           <div class="queue-col-label">📂 Opened</div>
           <div id="opened-list"><p class="queue-empty">Nothing opened yet.</p></div>
         </div>
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <div class="card how-card">
+      <div class="card-label">How it works</div>
+      <div class="how-steps">
+
+        <div class="how-step">
+          <div class="how-step-num">1</div>
+          <div class="how-step-icon">💻</div>
+          <div class="how-step-title">Set up the laptop</div>
+          <div class="how-step-desc">Log in with your name to get a permanent room code. Download the Chrome extension and enter your room code once — it stays connected.</div>
+        </div>
+
+        <div class="how-step">
+          <div class="how-step-num">2</div>
+          <div class="how-step-icon">📱</div>
+          <div class="how-step-title">Connect a phone</div>
+          <div class="how-step-desc">Scan the QR code on this page — or open <strong style="color:#e8e8f0">scan-to-fill.onrender.com/mobile.html</strong> and type the room code. Multiple phones can connect to the same room.</div>
+        </div>
+
+        <div class="how-step">
+          <div class="how-step-num">3</div>
+          <div class="how-step-icon">📷</div>
+          <div class="how-step-title">Scan the paper form</div>
+          <div class="how-step-desc">The scanner taps Take Photo and photographs the patient's paper intake form. Claude AI reads the handwriting and extracts every field automatically.</div>
+        </div>
+
+        <div class="how-step">
+          <div class="how-step-num">4</div>
+          <div class="how-step-icon">✏️</div>
+          <div class="how-step-title">Review &amp; confirm</div>
+          <div class="how-step-desc">The phone shows all extracted fields. The scanner checks for mistakes, edits any wrong values, then taps <strong style="color:#e8e8f0">Confirm &amp; Fill Form</strong>.</div>
+        </div>
+
+        <div class="how-step">
+          <div class="how-step-num">5</div>
+          <div class="how-step-icon">✅</div>
+          <div class="how-step-title">Form fills itself</div>
+          <div class="how-step-desc">The NCNMO web form on the laptop fills in automatically — name, gender, marital status, state, location, date of birth, everything. No clicking needed.</div>
+        </div>
+
+        <div class="how-step">
+          <div class="how-step-num">6</div>
+          <div class="how-step-icon">🔁</div>
+          <div class="how-step-title">Next patient, instantly</div>
+          <div class="how-step-desc">The laptop navigates to a fresh blank form on its own. The scanner can immediately photograph the next patient's form. The cycle repeats.</div>
+        </div>
+
       </div>
     </div>
 
