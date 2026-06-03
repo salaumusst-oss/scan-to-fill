@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Scan Form</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NCNMO Scanner">
+  <meta name="theme-color" content="#1b5e20">
+  <link rel="manifest" href="/manifest.json">
+  <title>NCNMO Scanner</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -109,9 +113,51 @@
     .done-icon  { font-size: 64px; margin-bottom: 16px; }
     .done-title { font-size: 22px; font-weight: 900; color: #4ade80; margin-bottom: 8px; }
     .done-sub   { font-size: 14px; color: #555; margin-bottom: 32px; }
+
+    /* ── Uncertain field highlighting (feature 4) ── */
+    .field-row.uncertain .field-label { color: #f59e0b; }
+    .field-input.uncertain { color: #fbbf24; border-bottom-color: rgba(251,191,36,.55) !important; }
+    .uncertain-tag {
+      font-size: 9px; font-weight: 800; letter-spacing: .3px;
+      background: rgba(245,158,11,.18); color: #f59e0b;
+      padding: 1px 5px; border-radius: 4px; margin-left: 5px; vertical-align: middle;
+    }
+
+    /* ── PWA install banner (feature 9) ── */
+    #install-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: #1b5e20; color: #fff;
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; font-size: 13px; font-weight: 600;
+    }
+    #install-banner span { flex: 1; }
+    #install-btn {
+      background: #fff; color: #1b5e20; border: none;
+      border-radius: 8px; padding: 6px 14px;
+      font-size: 12px; font-weight: 800; cursor: pointer; flex-shrink: 0;
+    }
+    #install-close {
+      background: none; border: none; color: rgba(255,255,255,.7);
+      font-size: 20px; cursor: pointer; line-height: 1; flex-shrink: 0; padding: 0 2px;
+    }
+    #ios-hint {
+      font-size: 12px; color: #888; text-align: center;
+      padding: 8px 20px 0; line-height: 1.6;
+    }
   </style>
 </head>
 <body>
+
+  <!-- PWA install banner (Android) -->
+  <div id="install-banner" style="display:none">
+    <span>Add to Home Screen for quick access</span>
+    <button id="install-btn">Install</button>
+    <button id="install-close">×</button>
+  </div>
+  <!-- iOS install hint -->
+  <div id="ios-hint" style="display:none">
+    Tap <strong style="color:#4ade80">Share</strong> then <strong style="color:#4ade80">Add to Home Screen</strong>
+  </div>
 
   <!-- ── 1. Enter room code ── -->
   <div class="screen active" id="screen-enter">
@@ -338,7 +384,7 @@
   });
 
   // ── Scan flow ──────────────────────────────────────────────────────────────
-  let currentFields = {}, currentScanId = null, scannerName = 'Phone';
+  let currentFields = {}, currentUncertain = [], currentScanId = null, scannerName = 'Phone';
 
   const input   = document.getElementById('capture-input');
   const scanBtn = document.getElementById('scan-btn');
@@ -370,8 +416,9 @@
       const res  = await fetch('/api/upload', { method: 'POST', body: form });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Upload failed');
-      currentFields = data.fields || {};
-      currentScanId = data.id;
+      currentFields    = data.fields    || {};
+      currentUncertain = data.uncertain || [];
+      currentScanId    = data.id;
       showReview();
     } catch (e) {
       setStatus('scan-status', '✗ ' + e.message, 'err');
@@ -382,12 +429,15 @@
   // ── Review ─────────────────────────────────────────────────────────────────
   function showReview() {
     const card = document.getElementById('fields-card');
-    card.innerHTML = FIELD_LABELS.map(([key, label]) => `
-      <div class="field-row">
-        <div class="field-label">${label}</div>
-        <input class="field-input ${currentFields[key] ? '' : 'empty'}"
+    card.innerHTML = FIELD_LABELS.map(([key, label]) => {
+      const uncer = currentUncertain.includes(key);
+      return `
+      <div class="field-row${uncer ? ' uncertain' : ''}">
+        <div class="field-label">${label}${uncer ? '<span class="uncertain-tag">check</span>' : ''}</div>
+        <input class="field-input ${currentFields[key] ? '' : 'empty'}${uncer ? ' uncertain' : ''}"
                data-key="${key}" value="${esc(currentFields[key] || '')}" placeholder="—">
-      </div>`).join('');
+      </div>`;
+    }).join('');
     card.querySelectorAll('.field-input').forEach(inp => {
       inp.addEventListener('input', () => {
         currentFields[inp.dataset.key] = inp.value;
@@ -424,6 +474,37 @@
     scanBtn.disabled = false; scanBtn.textContent = '📷  Take Photo';
     setStatus('scan-status', '', '');
     show('screen-scan');
+  }
+
+  // ── PWA install prompt (feature 9) ────────────────────────────────────────
+  let deferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('install-banner').style.display = 'flex';
+  });
+
+  document.getElementById('install-btn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    document.getElementById('install-banner').style.display = 'none';
+    deferredPrompt = null;
+  });
+
+  document.getElementById('install-close').addEventListener('click', () => {
+    document.getElementById('install-banner').style.display = 'none';
+  });
+
+  // iOS — show manual instructions (no beforeinstallprompt on Safari)
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.navigator.standalone) {
+    document.getElementById('ios-hint').style.display = 'block';
+  }
+
+  // Register service worker (needed for PWA installability)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
 
   // ── Disconnect on leave ────────────────────────────────────────────────────

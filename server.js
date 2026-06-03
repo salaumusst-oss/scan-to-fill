@@ -79,7 +79,8 @@ app.get('/api/stream', (req, res) => {
 //
 // scanEntry: { id, fields, timestamp, scannerName }
 
-const rooms = {};
+const rooms    = {};
+const lastFill = {};   // { roomCode: { fields, timestamp } }  ← re-fill last patient
 
 function getRoom(code) {
   if (!rooms[code]) rooms[code] = {
@@ -277,7 +278,7 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
   const room = (req.body.room || 'default').trim().toUpperCase();
   try {
-    const fields = await extractWithAI(req.file.buffer, req.file.mimetype);
+    const { fields, uncertain } = await extractWithAI(req.file.buffer, req.file.mimetype);
     const r      = getRoom(room);
 
     // Determine which phone is sending (match session if provided)
@@ -285,7 +286,7 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     const phone = r.phones.find(p => p.session === senderSession);
     const scannerName = phone ? phone.name : parseDevice(req.headers['user-agent']);
 
-    const entry = { id: makeScanId(), fields, timestamp: Date.now(), scannerName };
+    const entry = { id: makeScanId(), fields, uncertain, timestamp: Date.now(), scannerName };
 
     // Add to unopened (newest first), cap at 20
     r.unopened.unshift(entry);
@@ -295,7 +296,7 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
 
     scheduleSave(); // persist the new scan
     sseNotify(room, 'new-scan', { unopened: r.unopened, opened: r.opened, selected: r.selected });
-    res.json({ ok: true, fields, id: entry.id });
+    res.json({ ok: true, fields, uncertain, id: entry.id });
   } catch (err) {
     console.error(`[${room}] AI error:`, err.message);
     res.status(500).json({ error: err.message });
@@ -330,6 +331,7 @@ app.post('/api/scan/confirm', (req, res) => {
   if (r.opened.length > 50) r.opened = r.opened.slice(0, 50);
   r.selected    = entry;
   r.pendingFill = { fields, timestamp: Date.now(), id: entry.id };
+  lastFill[room] = { fields, timestamp: Date.now() };  // ← re-fill last patient
 
   scheduleSave();
   sseNotify(room, 'new-scan', { unopened: r.unopened, opened: r.opened, selected: r.selected });
@@ -343,6 +345,12 @@ app.get('/api/pending-fill', (req, res) => {
   const fill = r.pendingFill || null;
   if (fill) { r.pendingFill = null; scheduleSave(); }
   res.json(fill || { fields: null });
+});
+
+// ── GET /api/last-fill?room=XXXX — returns fields from the last confirmed scan ─
+app.get('/api/last-fill', (req, res) => {
+  const room = (req.query.room || '').trim().toUpperCase();
+  res.json(lastFill[room] || { fields: null });
 });
 
 // ── GET /api/scans?room=XXXX ──────────────────────────────────────────────────
@@ -417,7 +425,6 @@ async function extractWithAI(buffer, mimeType) {
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5',
-    max_tokens: 512,
     messages: [{
       role: 'user',
       content: [
@@ -436,7 +443,8 @@ Return ONLY a JSON object with these exact keys — use empty string "" if a fie
   "Address": "",
   "Religion": "",
   "Next of Kin Phone": "",
-  "Patient Phone No.": ""
+  "Patient Phone No.": "",
+  "_uncertain": []
 }
 
 Rules:
@@ -445,15 +453,20 @@ Rules:
 - Marital Status: the form may use abbreviations — "M" or "Married", "D" or "Divorced", "W" or "Widowed", "S" or "Single". Always return the full word: "Married", "Divorced", "Widowed", or "Single".
 - Age should be just the number (e.g. "45").
 - Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
+- "_uncertain": list any field names where the handwriting was hard to read, ambiguous, or you are less than 80% confident. Example: ["Date of Birth", "Last Name"]. Leave empty [] if everything was clear.
 - Return only the JSON, no other text.` }
       ]
-    }]
+    }],
+    max_tokens: 600,
   });
 
   const text  = response.content[0].text.trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse AI response');
-  return JSON.parse(match[0]);
+  const parsed   = JSON.parse(match[0]);
+  const uncertain = Array.isArray(parsed._uncertain) ? parsed._uncertain : [];
+  const fields    = Object.fromEntries(Object.entries(parsed).filter(([k]) => k !== '_uncertain'));
+  return { fields, uncertain };
 }
 
 // ── Start ──────────────────────────────────────────────────────────────────────

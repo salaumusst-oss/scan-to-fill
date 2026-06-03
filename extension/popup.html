@@ -86,9 +86,10 @@
     }
     .btn:active { opacity: .8; }
     .btn + .btn { margin-top: 7px; }
-    .btn-fill  { background: #4ade80; color: #0f0f1a; }
-    .btn-clear { background: #2a2a45; color: #f87171; border: 1px solid #3a3a55; }
-    .btn-setup { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; }
+    .btn-fill   { background: #4ade80; color: #0f0f1a; }
+    .btn-refill { background: #12231a; color: #6ee7b7; border: 1px solid #1e3a2a; }
+    .btn-clear  { background: #2a2a45; color: #f87171; border: 1px solid #3a3a55; }
+    .btn-setup  { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; }
     .btn:disabled { opacity: .3; cursor: default; }
 
     /* ── Settings panel ── */
@@ -167,8 +168,9 @@
 
     <div id="fields-section"></div>
 
-    <button class="btn btn-fill"  id="fill-btn"  style="display:none">↩ Fill Page Now</button>
-    <button class="btn btn-clear" id="clear-btn">✕ Clear Form</button>
+    <button class="btn btn-fill"   id="fill-btn"   style="display:none">↩ Fill Page Now</button>
+    <button class="btn btn-refill" id="refill-btn" style="display:none">↺ Re-fill last patient</button>
+    <button class="btn btn-clear"  id="clear-btn">✕ Clear Form</button>
     <button class="btn btn-setup" id="setup-btn">⚙️ Settings</button>
 
     <!-- Settings panel (hidden until ⚙️ is clicked) -->

@@ -1,0 +1,19 @@
+{
+  "name": "NCNMO Patient Scanner",
+  "short_name": "Scanner",
+  "description": "NCNMO Medical Mission patient intake form scanner",
+  "start_url": "/mobile.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#051209",
+  "theme_color": "#1b5e20",
+  "icons": [
+    {
+      "src": "https://ncnmo.org/wp-content/uploads/2024/03/ncnmologo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

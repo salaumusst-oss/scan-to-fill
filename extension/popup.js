@@ -78,6 +78,7 @@ async function loadMain(roomCode) {
     dot.classList.remove('pulse');
     dot.classList.add('ok');
     statusText.textContent = `Connected · Room: ${roomCode}`;
+    document.getElementById('refill-btn').style.display = 'block';
 
     if (data.fields && Object.values(data.fields).some(v => v)) {
       fillBtn.style.display = 'block';
@@ -254,9 +255,10 @@ async function init() {
     window.close();
   });
 
-  // ── Fill / Clear ─────────────────────────────────────────────────────────────
+  // ── Fill / Clear / Re-fill ───────────────────────────────────────────────────
   document.getElementById('fill-btn').addEventListener('click', fillPage);
   document.getElementById('clear-btn').addEventListener('click', clearPage);
+  document.getElementById('refill-btn').addEventListener('click', refillPage);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -265,23 +267,8 @@ function updatePhoneUrl(serverUrl, roomCode) {
   document.getElementById('phone-url-display').textContent = url;
 }
 
-// ── Fill page ──────────────────────────────────────────────────────────────────
-async function fillPage() {
-  const roomCode = await new Promise(r => chrome.storage.local.get({ roomCode: '' }, d => r(d.roomCode)));
-  if (!roomCode) return;
-
-  try {
-    const res  = await fetch(`${DEFAULT_SERVER}/api/latest?room=${roomCode}`);
-    const data = await res.json();
-    if (!data.fields) { alert('No scan data. Scan a form first.'); return; }
-
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    if (!tab) return;
-
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      world: 'MAIN',
-      func: async (fields) => {
+// ── Shared fill function (self-contained — no closures over outer scope) ───────
+async function _autoFill(fields) {
         let filled = 0;
 
         // ── Expand single-letter abbreviations written on the paper form ────
@@ -434,13 +421,38 @@ async function fillPage() {
         document.body.appendChild(t);
         setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(() => t.remove(), 350); }, 3500);
       },
-      args: [data.fields]
-    });
+}
 
-    window.close();
-  } catch (e) {
-    alert('Error: ' + e.message);
-  }
+// ── Run fill on the active tab ─────────────────────────────────────────────────
+async function _runFill(fields) {
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (!tab) return;
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: _autoFill, args: [fields] });
+  window.close();
+}
+
+// ── Fill page — uses the currently selected scan ───────────────────────────────
+async function fillPage() {
+  const roomCode = await new Promise(r => chrome.storage.local.get({ roomCode: '' }, d => r(d.roomCode)));
+  if (!roomCode) return;
+  try {
+    const res  = await fetch(`${DEFAULT_SERVER}/api/latest?room=${roomCode}`);
+    const data = await res.json();
+    if (!data.fields) { alert('No scan data. Scan a form first.'); return; }
+    await _runFill(data.fields);
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ── Re-fill last patient — re-runs the last confirmed scan's fields ────────────
+async function refillPage() {
+  const roomCode = await new Promise(r => chrome.storage.local.get({ roomCode: '' }, d => r(d.roomCode)));
+  if (!roomCode) return;
+  try {
+    const res  = await fetch(`${DEFAULT_SERVER}/api/last-fill?room=${roomCode}`);
+    const data = await res.json();
+    if (!data.fields) { alert('No previous patient found. Confirm a scan first.'); return; }
+    await _runFill(data.fields);
+  } catch (e) { alert('Error: ' + e.message); }
 }
 
 // ── Clear page ─────────────────────────────────────────────────────────────────

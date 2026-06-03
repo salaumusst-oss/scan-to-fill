@@ -67,6 +67,15 @@
       position: absolute; inset: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 0;
     }
+
+    /* ── Reconnect banner (feature 10) ── */
+    #reconnect-banner {
+      display: none; position: fixed; top: 58px; left: 0; right: 0; z-index: 150;
+      background: #7f1d1d; color: #fca5a5;
+      padding: 8px 20px; font-size: 12px; font-weight: 600;
+      align-items: center; justify-content: center; gap: 8px;
+    }
+    #reconnect-banner.ok { background: #14532d; color: #86efac; }
     .login-center {
       position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center;
@@ -290,6 +299,11 @@
   </style>
 </head>
 <body>
+
+<!-- Reconnect banner -->
+<div id="reconnect-banner">
+  <span id="reconnect-text">Connection lost — reconnecting...</span>
+</div>
 
 <!-- NAV -->
 <nav>
@@ -517,8 +531,10 @@
   function startSSE(room){
     if(liveSSE) liveSSE.close();
     liveSSE=new EventSource(`/api/stream?room=${encodeURIComponent(room)}`);
-    let first=true;
+    let first=true, wasLost=false;
+
     liveSSE.addEventListener('new-scan',e=>{
+      if(wasLost){ showReconnected(); wasLost=false; }
       const data=JSON.parse(e.data);
       renderScans(data);
       if(!first){
@@ -531,7 +547,22 @@
       }
       first=false;
     });
-    liveSSE.onerror=()=>{ liveSSE.close(); setTimeout(()=>{ if(liveRoom) startSSE(liveRoom); },3000); };
+
+    liveSSE.onerror=()=>{
+      wasLost=true;
+      const b=document.getElementById('reconnect-banner');
+      document.getElementById('reconnect-text').textContent='Connection lost — reconnecting...';
+      b.className=''; b.style.display='flex';
+      liveSSE.close();
+      setTimeout(()=>{ if(liveRoom) startSSE(liveRoom); },3000);
+    };
+  }
+
+  function showReconnected(){
+    const b=document.getElementById('reconnect-banner');
+    document.getElementById('reconnect-text').textContent='Reconnected';
+    b.className='ok'; b.style.display='flex';
+    setTimeout(()=>{ b.style.display='none'; },3000);
   }
 
   async function refreshAll(){ if(!liveRoom) return; await Promise.all([refreshScans(),refreshDevices()]); }
