@@ -421,15 +421,21 @@ async function extractWithAI(buffer, mimeType) {
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-opus-4-5',
     max_tokens: 512,
     messages: [{
       role: 'user',
       content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } },
-        { type: 'text', text: `This is a patient intake form. Read all the handwritten values filled in on the form.
+        { type: 'text', text: `Read this patient intake form and fill in the JSON below.
 
-Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
+CRITICAL RULES — breaking any of these is wrong:
+1. Copy names LETTER FOR LETTER exactly as written. Never change, correct, or replace a name.
+2. Copy phone numbers DIGIT FOR DIGIT exactly as written. No dots, dashes, spaces, or formatting.
+3. Copy addresses EXACTLY as written — include all words, numbers, and streets.
+4. If a character is unclear, make your best guess at that character. Do not skip fields.
+5. Return ONLY the JSON. No explanation, no markdown.
+
 {
   "First Name": "",
   "Last Name": "",
@@ -444,13 +450,12 @@ Return ONLY a JSON object with these exact keys — use empty string "" if a fie
   "Patient Phone No.": ""
 }
 
-Rules:
-- The "Name" line is a full name — split into First Name and Last Name on the first space. If one word, put it all in First Name.
-- Gender: the form may say "M" or "F" or write it in full. Always return exactly "Male" or "Female".
-- Marital Status: the form may use abbreviations — "M" or "Married", "D" or "Divorced", "W" or "Widowed", "S" or "Single". Always return the full word: "Married", "Divorced", "Widowed", or "Single".
-- Age should be just the number (e.g. "45").
-- Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
-- Return only the JSON, no other text.` }
+Additional rules:
+- Name line: split on first space — before = First Name, after = Last Name.
+- Gender: return "Male" or "Female" only.
+- Marital Status: M/Married→"Married", S/Single→"Single", D/Divorced→"Divorced", W/Widowed→"Widowed".
+- Age: digits only, no units.
+- Date of Birth: YYYY-MM-DD only if a date is written. Empty if only age is given.` }
       ]
     }]
   });
