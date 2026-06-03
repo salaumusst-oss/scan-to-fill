@@ -108,8 +108,12 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     func:   autoFillFunc,
     args:   [msg.fields]
   }).then(() => {
-    // Give the form a moment, then reload for the next patient
-    setTimeout(() => chrome.tabs.reload(tabId), 2000);
+    // After fill + submit click, navigate to a fresh patient create form.
+    // 4 s gives the form time to submit and NCNMO to process the request
+    // before we forcibly load the next blank form.
+    setTimeout(() => {
+      chrome.tabs.update(tabId, { url: 'https://ncnmoplatformemr.axocheck.com/patient/create/' });
+    }, 4000);
   }).catch(console.error);
 });
 
@@ -232,11 +236,27 @@ async function autoFillFunc(fields) {
     }
   }
 
+  // ── Click the submit button to actually create the patient ────────────────
+  await new Promise(r => setTimeout(r, 500)); // let last React update settle
+  const submitBtn =
+    document.querySelector('button[type="submit"]') ||
+    document.querySelector('input[type="submit"]')  ||
+    [...document.querySelectorAll('button')].find(b =>
+      !b.disabled && b.offsetParent !== null &&
+      /submit|save|create|add patient|register/i.test(b.textContent.trim())
+    );
+  if (submitBtn && !submitBtn.disabled) {
+    submitBtn.click();
+    filled++; // count the submit as confirmation
+  }
+
   // Toast
   document.getElementById('stf-toast')?.remove();
   const t = document.createElement('div');
   t.id = 'stf-toast';
-  t.textContent = `✓ Filled ${filled} fields — loading next patient…`;
+  t.textContent = submitBtn
+    ? `✓ Filled ${filled - 1} fields — patient submitted!`
+    : `✓ Filled ${filled} fields — check submit button`;
   Object.assign(t.style, {
     position:'fixed', bottom:'24px', right:'24px', zIndex:'2147483647',
     background:'#1e3a2a', border:'1.5px solid #4ade80', color:'#4ade80',
