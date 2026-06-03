@@ -1,13 +1,15 @@
 // content.js — ISOLATED world, runs on every page.
 // On the NCNMO form: opens a persistent port to background.js
-// (this keeps the service worker alive so it can poll and fill).
+// (keeps SW alive for polling) + watches URL for auto-next-patient.
 
+const STF_SERVER = 'https://scan-to-fill.onrender.com';
 const NCNMO_HOST = 'ncnmoplatformemr.axocheck.com';
 
 if (location.hostname === NCNMO_HOST) {
-  chrome.storage.local.get({ roomCode: '' }, ({ roomCode }) => {
+  chrome.storage.local.get({ roomCode: '', autoNext: true }, ({ roomCode, autoNext }) => {
     showBadge(roomCode);
     if (roomCode) connectPort(roomCode);
+    watchForAutoNext();
   });
 }
 
@@ -42,38 +44,32 @@ function setBadge(text, color) {
   b.style.background = color === '#4ade80' ? '#0d1f14' : color === '#fbbf24' ? '#1f1800' : '#1a0d0d';
 }
 
-// ── Auto-next patient — navigates to /patient/create/ after form submit ─────────
-function setupAutoNext() {
-  // Intercept React SPA navigation (history.pushState / replaceState)
-  const orig = {
-    push:    history.pushState.bind(history),
-    replace: history.replaceState.bind(history),
-  };
+// ── Auto-next patient ─────────────────────────────────────────────────────────
+// Polls location.href every 500ms. If we WERE on /patient/create/ and the URL
+// changed away from it (React submitted the form and navigated), redirect back
+// to a fresh /patient/create/. This works in ISOLATED world — no history hacks.
+function watchForAutoNext() {
+  let lastPath = location.pathname;
 
-  function onNav(newUrl) {
-    if (!newUrl) return;
-    const path = typeof newUrl === 'string' ? newUrl : String(newUrl);
-    const wasOnCreate = location.pathname.includes('/patient/create');
-    const goingAway   = !path.includes('/patient/create');
-    if (wasOnCreate && goingAway) {
-      // User submitted — check toggle and redirect if ON
+  setInterval(() => {
+    const now = location.pathname;
+    if (now === lastPath) return;
+
+    const wasOnCreate = lastPath.includes('/patient/create');
+    const leftCreate  = !now.includes('/patient/create');
+    lastPath = now;
+
+    if (wasOnCreate && leftCreate) {
       chrome.storage.local.get({ autoNext: true }, ({ autoNext }) => {
         if (autoNext) {
+          setBadge('Loading next patient…', '#fbbf24');
           setTimeout(() => {
             location.href = 'https://ncnmoplatformemr.axocheck.com/patient/create/';
-          }, 600);
+          }, 800);
         }
       });
     }
-  }
-
-  history.pushState    = (s, t, url) => { orig.push(s, t, url);    onNav(url); };
-  history.replaceState = (s, t, url) => { orig.replace(s, t, url); onNav(url); };
-  window.addEventListener('popstate', () => onNav(location.pathname));
-}
-
-if (location.hostname === NCNMO_HOST) {
-  setupAutoNext();
+  }, 500);
 }
 
 // ── Persistent port — keeps the service worker alive while page is open ───────
@@ -84,18 +80,15 @@ function connectPort(roomCode) {
     try {
       port = chrome.runtime.connect({ name: 'stf-ncnmo' });
 
-      // Background tells us when it triggered a fill
       port.onMessage.addListener(msg => {
         if (msg.type === 'filling')  setBadge('Filling form…', '#fbbf24');
         if (msg.type === 'filled')   setBadge(`● Scan to Fill · Room ${roomCode}`, '#4ade80');
       });
 
-      // If port disconnects (SW restarted), reconnect after a moment
       port.onDisconnect.addListener(() => {
         setTimeout(connect, 1000);
       });
 
-      // Ping every 20s so the SW knows the page is still open
       const ping = setInterval(() => {
         try { port.postMessage({ type: 'ping', roomCode }); }
         catch { clearInterval(ping); }
