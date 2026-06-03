@@ -530,10 +530,13 @@
   document.getElementById('next-btn').addEventListener('click', resetToScan);
 
   function resetToScan() {
-    currentFields = {}; currentScanId = null;
+    currentFields = {}; currentScanId = null; currentUncertain = [];
     document.getElementById('preview').style.display = 'none';
     scanBtn.disabled = false; scanBtn.textContent = '📷  Take Photo';
+    const cb = document.getElementById('confirm-btn');
+    cb.disabled = false; cb.textContent = '✓ Correct — Fill Form';
     setStatus('scan-status', '', '');
+    setStatus('review-status', '', '');
     show('screen-scan');
   }
 
