@@ -664,8 +664,8 @@
   const CONNECT = 95;     // short lines = more of them, denser mesh
   const REPEL_R = 155;
   const REPEL_F = 20;
-  const GRAVITY = 0.018;  // very gentle — just noticeable drift downward
-  const DAMPING = 0.970;  // high = nodes coast to terminal velocity quickly
+  const GRAVITY = 0.006;  // very gentle — just noticeable drift downward
+  const DAMPING = 0.980;  // high = nodes coast to terminal velocity quickly
   // terminal vertical speed = GRAVITY / (1 - DAMPING) = 0.018/0.03 = 0.6 px/frame ≈ 36 px/s
   const COUNT   = window.innerWidth < 640 ? 75 : 120;
 
