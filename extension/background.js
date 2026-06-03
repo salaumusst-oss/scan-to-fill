@@ -107,14 +107,8 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     world:  'MAIN',
     func:   autoFillFunc,
     args:   [msg.fields]
-  }).then(() => {
-    // After fill + submit click, navigate to a fresh patient create form.
-    // 4 s gives the form time to submit and NCNMO to process the request
-    // before we forcibly load the next blank form.
-    setTimeout(() => {
-      chrome.tabs.update(tabId, { url: 'https://ncnmoplatformemr.axocheck.com/patient/create/' });
-    }, 4000);
   }).catch(console.error);
+  // No auto-navigation — user reviews the filled form and clicks Submit manually.
 });
 
 // ── Standalone fill function — runs in the page's MAIN world ───────────────────
@@ -197,7 +191,7 @@ async function autoFillFunc(fields) {
     [() => findSelectByOptions('male','female')    || findSelectByLabel('Gender'),         gender],
     [() => findSelectByOptions('married','single') || findSelectByLabel('Marital Status'), marital],
     [() => findSelectByOptions('kwara')            || findSelectByLabel('State'),          'Kwara'],
-    [() => findSelectByOptions('ajespepo')           || findSelectByLabel('Location'),       'Ajespepo'],
+    [() => findSelectByOptions('ajase')           || findSelectByLabel('Location'),       'Ajase Ipo'],
   ]) {
     if (!value) continue;
     await new Promise(r => setTimeout(r, 200));
@@ -236,27 +230,13 @@ async function autoFillFunc(fields) {
     }
   }
 
-  // ── Click the submit button to actually create the patient ────────────────
-  await new Promise(r => setTimeout(r, 500)); // let last React update settle
-  const submitBtn =
-    document.querySelector('button[type="submit"]') ||
-    document.querySelector('input[type="submit"]')  ||
-    [...document.querySelectorAll('button')].find(b =>
-      !b.disabled && b.offsetParent !== null &&
-      /submit|save|create|add patient|register/i.test(b.textContent.trim())
-    );
-  if (submitBtn && !submitBtn.disabled) {
-    submitBtn.click();
-    filled++; // count the submit as confirmation
-  }
-
   // Toast
   document.getElementById('stf-toast')?.remove();
   const t = document.createElement('div');
   t.id = 'stf-toast';
-  t.textContent = submitBtn
-    ? `✓ Filled ${filled - 1} fields — patient submitted!`
-    : `✓ Filled ${filled} fields — check submit button`;
+  t.textContent = filled > 0
+    ? `✓ Filled ${filled} fields — review and click Submit`
+    : '⚠ No fields filled — check the form';
   Object.assign(t.style, {
     position:'fixed', bottom:'24px', right:'24px', zIndex:'2147483647',
     background:'#1e3a2a', border:'1.5px solid #4ade80', color:'#4ade80',

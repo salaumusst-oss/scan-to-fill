@@ -182,7 +182,7 @@
       const stateS = findSelectByLabel('State');
       if (stateS && setSelectVal(stateS, 'Kwara')) filled++;
       const locS = findSelectByLabel('Location');
-      if (locS && setSelectVal(locS, 'Ajespepo')) filled++;
+      if (locS && setSelectVal(locS, 'Ajase Ipo')) filled++;
 
       // DOB: prefer explicit date, fall back to age → Jan 1 of birth year
       let yr = null, mo = 0, dy = 1;

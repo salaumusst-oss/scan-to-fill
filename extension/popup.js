@@ -366,7 +366,7 @@ async function _autoFill(fields) {
           [() => findSelectByOptions('male','female')     || findSelectByLabel('Gender'),         gender],
           [() => findSelectByOptions('married','single')  || findSelectByLabel('Marital Status'), marital],
           [() => findSelectByOptions('kwara')             || findSelectByLabel('State'),          'Kwara'],
-          [() => findSelectByOptions('ajespepo')            || findSelectByLabel('Location'),       'Ajespepo'],
+          [() => findSelectByOptions('ajase')            || findSelectByLabel('Location'),       'Ajase Ipo'],
         ]) {
           if (!value) continue;
           await new Promise(r => setTimeout(r, 200)); // let React finish re-rendering
@@ -405,23 +405,12 @@ async function _autoFill(fields) {
           }
         }
 
-        // ── Click submit to actually create the patient ──────────────────
-        await new Promise(r => setTimeout(r, 500));
-        const submitBtn =
-          document.querySelector('button[type="submit"]') ||
-          document.querySelector('input[type="submit"]')  ||
-          [...document.querySelectorAll('button')].find(b =>
-            !b.disabled && b.offsetParent !== null &&
-            /submit|save|create|add patient|register/i.test(b.textContent.trim())
-          );
-        if (submitBtn && !submitBtn.disabled) submitBtn.click();
-
         document.getElementById('stf-toast')?.remove();
         const t = document.createElement('div');
         t.id = 'stf-toast';
-        t.textContent = submitBtn
-          ? `✓ Filled ${filled} fields — patient submitted!`
-          : (filled > 0 ? `✓ Filled ${filled} fields` : '⚠ No fields filled');
+        t.textContent = filled > 0
+          ? `✓ Filled ${filled} fields — review and click Submit`
+          : '⚠ No fields filled — check the form';
         Object.assign(t.style, {
           position:'fixed', bottom:'24px', right:'24px', zIndex:'2147483647',
           background: filled > 0 ? '#1e3a2a' : '#3a2e1a',
