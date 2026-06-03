@@ -427,7 +427,9 @@ async function extractWithAI(buffer, mimeType) {
       role: 'user',
       content: [
         { type: 'image_url', image_url: { url: `data:${mediaType};base64,${buffer.toString('base64')}`, detail: 'high' } },
-        { type: 'text', text: `Look at this form image and read exactly what is written. Copy the text you see into this JSON — do not guess, infer, or auto-correct anything. Write exactly what is on the paper.
+        { type: 'text', text: `Read this form image and copy what is written into the JSON below.
+
+For each field: read the handwriting character by character and write your best reading. If a character is unclear, write your best guess for that individual character — do not skip it or leave the whole field blank. Do not replace or swap whole words with different words.
 
 {
   "First Name": "",
