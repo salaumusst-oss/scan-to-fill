@@ -1,6 +1,6 @@
 const express  = require('express');
 const multer   = require('multer');
-const OpenAI = require('openai');
+const Anthropic = require('@anthropic-ai/sdk');
 const archiver = require('archiver');
 const os   = require('os');
 const path = require('path');
@@ -21,12 +21,12 @@ app.use((req, res, next) => {
   next();
 });
 
-if (!process.env.OPENAI_API_KEY) {
-  console.error('\n❌ OPENAI_API_KEY is not set. Add it in Render → Environment tab.\n');
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('\n❌ ANTHROPIC_API_KEY is not set.\n');
   process.exit(1);
 }
 
-const openai = new OpenAI();
+const client = new Anthropic();
 
 // ── Version ────────────────────────────────────────────────────────────────────
 const EXTENSION_VERSION = '1.5.0';
@@ -415,18 +415,18 @@ app.get('/download/extension', (req, res) => {
   archive.finalize();
 });
 
-// ── GPT-4o extraction ─────────────────────────────────────────────────────────
+// ── Claude extraction ─────────────────────────────────────────────────────────
 async function extractWithAI(buffer, mimeType) {
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-5',
     max_tokens: 512,
     messages: [{
       role: 'user',
       content: [
-        { type: 'image_url', image_url: { url: `data:${mediaType};base64,${buffer.toString('base64')}`, detail: 'high' } },
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } },
         { type: 'text', text: `Read this form image and copy what is written into the JSON below.
 
 For each field: read the handwriting character by character and write your best reading. If a character is unclear, write your best guess for that individual character — do not skip it or leave the whole field blank. Do not replace or swap whole words with different words.
@@ -450,7 +450,7 @@ Return only the JSON. No explanation.` }
     }]
   });
 
-  const text = response.choices[0].message.content.trim();
+  const text = response.content[0].text.trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse AI response');
   const fields = JSON.parse(match[0]);
