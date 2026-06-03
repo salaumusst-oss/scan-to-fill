@@ -423,7 +423,7 @@ async function extractWithAI(buffer, mimeType) {
   const model  = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const result = await model.generateContent([
     { inlineData: { mimeType: mediaType, data: buffer.toString('base64') } },
-    { text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
+    { text: `This is a patient intake form. Read all the handwritten values exactly as written — do not guess, correct, or assume any values.
 
 Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
 {
