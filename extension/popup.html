@@ -90,6 +90,16 @@
     .btn-refill { background: #12231a; color: #6ee7b7; border: 1px solid #1e3a2a; }
     .btn-clear  { background: #2a2a45; color: #f87171; border: 1px solid #3a3a55; }
     .btn-setup  { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; }
+    .btn-test   { background: #1a1a2e; color: #fbbf24; border: 1px solid #2a2410; }
+
+    /* Test results */
+    #test-results {
+      display: none; margin-top: 7px; border-radius: 9px; padding: 10px 12px;
+      background: #0d0d1a; border: 1px solid #2a2a45; font-size: 11px; line-height: 1.8;
+    }
+    .tr-pass { color: #4ade80; }
+    .tr-fail { color: #f87171; }
+    .tr-warn { color: #fbbf24; }
 
     /* NCNMO tab status */
     #ncnmo-bar { margin-bottom: 7px; border-radius: 9px; padding: 9px 12px; font-size: 12px; line-height: 1.5; }
@@ -183,6 +193,8 @@
 
     <button class="btn btn-fill"   id="fill-btn"   style="display:none">↩ Fill Page Now</button>
     <button class="btn btn-refill" id="refill-btn" style="display:none">↺ Re-fill last patient</button>
+    <button class="btn btn-test"   id="test-btn">⚡ Test Page Connection</button>
+    <div id="test-results"></div>
     <button class="btn btn-clear"  id="clear-btn">✕ Clear Form</button>
     <button class="btn btn-setup" id="setup-btn">⚙️ Settings</button>
 

@@ -131,6 +131,98 @@ async function checkNcnmoTab() {
   } catch {}
 }
 
+// ── Test page connection ───────────────────────────────────────────────────────
+async function testPageConnection() {
+  const btn = document.getElementById('test-btn');
+  const box = document.getElementById('test-results');
+  btn.textContent = 'Testing…'; btn.disabled = true;
+  box.style.display = 'block';
+  box.innerHTML = '<span style="color:#7eb8f7">Running checks…</span>';
+
+  const lines = [];
+  const pass = t => `<div class="tr-pass">✓ ${t}</div>`;
+  const fail = t => `<div class="tr-fail">✗ ${t}</div>`;
+  const warn = t => `<div class="tr-warn">⚠ ${t}</div>`;
+
+  try {
+    // 1. Room code
+    const { roomCode } = await new Promise(r => chrome.storage.local.get({ roomCode: '' }, r));
+    if (roomCode) lines.push(pass(`Room code set: ${roomCode}`));
+    else { lines.push(fail('No room code — open extension setup')); box.innerHTML = lines.join(''); btn.textContent = '⚡ Test Page Connection'; btn.disabled = false; return; }
+
+    // 2. Server reachable
+    try {
+      const res = await fetch(`${DEFAULT_SERVER}/api/version`, { signal: AbortSignal.timeout(8000) });
+      const d   = await res.json();
+      lines.push(pass(`Server online (v${d.version})`));
+    } catch { lines.push(fail('Server unreachable — check Render')); }
+
+    // 3. NCNMO tab open
+    const tabs = await chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' });
+    const formTab = tabs.find(t => t.url?.includes('/patient'));
+    if (!formTab) {
+      lines.push(fail('NCNMO patient form not open'));
+      lines.push(warn('Open the patient form tab then re-test'));
+      box.innerHTML = lines.join(''); btn.textContent = '⚡ Test Page Connection'; btn.disabled = false; return;
+    }
+    lines.push(pass(`NCNMO form open (tab ${formTab.id})`));
+
+    // 4. Can inject scripts into the tab
+    try {
+      const result = await chrome.scripting.executeScript({
+        target: { tabId: formTab.id },
+        world: 'MAIN',
+        func: () => ({
+          badge: !!document.getElementById('stf-badge'),
+          badgeText: document.getElementById('stf-badge')?.textContent || '',
+          inputs: document.querySelectorAll('input[name]').length,
+          url: location.href
+        })
+      });
+      const info = result[0].result;
+      lines.push(pass(`Script injection works (${info.inputs} inputs found)`));
+      if (info.badge) lines.push(pass(`Content script active: "${info.badgeText}"`));
+      else            lines.push(warn('Content script not running — reload extension then refresh the NCNMO tab'));
+    } catch (e) {
+      lines.push(fail(`Script injection failed: ${e.message}`));
+    }
+
+    // 5. Pending fill check
+    try {
+      const res  = await fetch(`${DEFAULT_SERVER}/api/pending-fill?room=${roomCode}`, { signal: AbortSignal.timeout(6000) });
+      const data = await res.json();
+      if (data.fields) lines.push(warn('Pending fill found — it should auto-fill now'));
+      else             lines.push(pass('No pending fill (waiting for phone confirm)'));
+    } catch { lines.push(warn('Could not check pending fill')); }
+
+    // 6. Test fill a single field
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: formTab.id },
+        world: 'MAIN',
+        func: () => {
+          const el = document.querySelector('input[name="first_name"]');
+          if (!el) return false;
+          const s = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+          if (s) s.call(el, 'TEST'); else el.value = 'TEST';
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          return el.value === 'TEST';
+        }
+      });
+      lines.push(pass('Test fill succeeded — pipeline is working'));
+    } catch (e) {
+      lines.push(fail(`Test fill failed: ${e.message}`));
+    }
+
+  } catch (e) {
+    lines.push(fail(`Unexpected error: ${e.message}`));
+  }
+
+  box.innerHTML = lines.join('');
+  btn.textContent = '⚡ Test Page Connection'; btn.disabled = false;
+}
+
 async function init() {
   const sessionId = await getOrCreateSession();
 
@@ -283,6 +375,7 @@ async function init() {
 
   // ── Fill / Clear / Re-fill ───────────────────────────────────────────────────
   document.getElementById('fill-btn').addEventListener('click', fillPage);
+  document.getElementById('test-btn').addEventListener('click', testPageConnection);
   document.getElementById('clear-btn').addEventListener('click', clearPage);
   document.getElementById('refill-btn').addEventListener('click', refillPage);
 }
