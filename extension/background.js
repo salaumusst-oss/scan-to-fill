@@ -135,7 +135,8 @@ async function autoFillFunc(fields) {
     const v   = value.trim().toLowerCase();
     const opt = [...select.options].find(o =>
       o.value.trim().toLowerCase() === v || o.text.trim().toLowerCase() === v ||
-      o.text.trim().toLowerCase().startsWith(v) || o.value.trim().toLowerCase().startsWith(v)
+      o.text.trim().toLowerCase().startsWith(v) || o.value.trim().toLowerCase().startsWith(v) ||
+      o.text.trim().toLowerCase().includes(v)   || o.value.trim().toLowerCase().includes(v)
     );
     if (!opt) return false;
     const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value')?.set;
@@ -191,7 +192,7 @@ async function autoFillFunc(fields) {
     [() => findSelectByOptions('male','female')    || findSelectByLabel('Gender'),         gender],
     [() => findSelectByOptions('married','single') || findSelectByLabel('Marital Status'), marital],
     [() => findSelectByOptions('kwara')            || findSelectByLabel('State'),          'Kwara'],
-    [() => findSelectByOptions('ajase')           || findSelectByLabel('Location'),       'Ajase Ipo'],
+    [() => findSelectByOptions('ajase')           || findSelectByLabel('Location'),       'Ajase'],
   ]) {
     if (!value) continue;
     await new Promise(r => setTimeout(r, 200));

@@ -424,16 +424,15 @@ async function extractWithAI(buffer, mimeType) {
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-haiku-4-5',
+    max_tokens: 512,
     messages: [{
       role: 'user',
       content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } },
-        { type: 'text', text: `You are reading a handwritten patient intake form from an NCNMO Medical Mission clinic in Nigeria (Kwara State). Extract every handwritten field carefully and accurately.
+        { type: 'text', text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
 
-The patients are Nigerian — names are commonly Yoruba, Hausa, or Fulani. Read each name character by character. Do not guess or anglicise — write exactly what is on the form.
-
-Return ONLY this JSON (no explanation, no markdown, just the raw JSON):
+Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
 {
   "First Name": "",
   "Last Name": "",
@@ -448,30 +447,13 @@ Return ONLY this JSON (no explanation, no markdown, just the raw JSON):
   "Patient Phone No.": ""
 }
 
-Field-by-field rules:
-
-Name: The form has a single "Name" line. Split on the first space — everything before the first space is First Name, everything after is Last Name. If only one word is written, put it in First Name and leave Last Name empty.
-
-Gender: May be written as "M", "F", "Male", "Female". Always output exactly "Male" or "Female". If blank leave empty.
-
-Age: A number only, e.g. "34". Strip any units like "yrs". If not written leave empty.
-
-Date of Birth: Only populate if an actual date is written on the form (not just age). Format as YYYY-MM-DD. Nigerian dates are often written DD/MM/YYYY — convert correctly. If only age is present, leave this empty.
-
-Marital Status: May be abbreviated. Map as follows exactly:
-  M or Married → "Married"
-  S or Single  → "Single"
-  D or Divorced → "Divorced"
-  W or Widowed → "Widowed"
-If blank leave empty.
-
-Phone numbers: Include the full number as written, including leading 0. Nigerian numbers are typically 11 digits starting with 0.
-
-Address: Write exactly what is on the form, including any street numbers and town name.
-
-Occupation and Religion: Copy exactly as written.
-
-Use "" for any field that is blank, crossed out, or genuinely unreadable — do NOT guess.` }
+Rules:
+- The "Name" line is a full name — split into First Name and Last Name on the first space. If one word, put it all in First Name.
+- Gender: the form may say "M" or "F" or write it in full. Always return exactly "Male" or "Female".
+- Marital Status: the form may use abbreviations — "M" or "Married", "D" or "Divorced", "W" or "Widowed", "S" or "Single". Always return the full word: "Married", "Divorced", "Widowed", or "Single".
+- Age should be just the number (e.g. "45").
+- Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
+- Return only the JSON, no other text.` }
       ]
     }],
     max_tokens: 1024,
