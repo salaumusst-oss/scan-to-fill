@@ -415,22 +415,21 @@ app.get('/download/extension', (req, res) => {
   archive.finalize();
 });
 
-// ── Claude extraction ─────────────────────────────────────────────────────────
+// ── Claude Haiku extraction — original working prompt ─────────────────────────
 async function extractWithAI(buffer, mimeType) {
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-haiku-4-5',
     max_tokens: 512,
     messages: [{
       role: 'user',
       content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } },
-        { type: 'text', text: `Read this form image and copy what is written into the JSON below.
+        { type: 'text', text: `This is a patient intake form. Read all the handwritten values filled in on the form.
 
-For each field: read the handwriting character by character and write your best reading. If a character is unclear, write your best guess for that individual character — do not skip it or leave the whole field blank. Do not replace or swap whole words with different words.
-
+Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
 {
   "First Name": "",
   "Last Name": "",
@@ -445,7 +444,13 @@ For each field: read the handwriting character by character and write your best 
   "Patient Phone No.": ""
 }
 
-Return only the JSON. No explanation.` }
+Rules:
+- The "Name" line is a full name — split into First Name and Last Name on the first space. If one word, put it all in First Name.
+- Gender: the form may say "M" or "F" or write it in full. Always return exactly "Male" or "Female".
+- Marital Status: the form may use abbreviations — "M" or "Married", "D" or "Divorced", "W" or "Widowed", "S" or "Single". Always return the full word: "Married", "Divorced", "Widowed", or "Single".
+- Age should be just the number (e.g. "45").
+- Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
+- Return only the JSON, no other text.` }
       ]
     }]
   });
