@@ -366,7 +366,7 @@ async function _autoFill(fields) {
           [() => findSelectByOptions('male','female')     || findSelectByLabel('Gender'),         gender],
           [() => findSelectByOptions('married','single')  || findSelectByLabel('Marital Status'), marital],
           [() => findSelectByOptions('kwara')             || findSelectByLabel('State'),          'Kwara'],
-          [() => findSelectByOptions('ilorin')            || findSelectByLabel('Location'),       'Ilorin'],
+          [() => findSelectByOptions('ajespepo')            || findSelectByLabel('Location'),       'Ajespepo'],
         ]) {
           if (!value) continue;
           await new Promise(r => setTimeout(r, 200)); // let React finish re-rendering
