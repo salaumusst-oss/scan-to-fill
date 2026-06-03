@@ -412,8 +412,22 @@
     form.append('room',  room);
     form.append('session', sessionId);
 
+    // Live elapsed-time counter so the user knows it's working
+    let elapsed = 0;
+    const ticker = setInterval(() => {
+      elapsed++;
+      scanBtn.textContent = elapsed < 10
+        ? `⏳  Reading… ${elapsed}s`
+        : `⏳  Still reading… ${elapsed}s`;
+    }, 1000);
+
+    // 90-second hard timeout (Sonnet + Render cold-start can be slow)
+    const ctrl = new AbortController();
+    const tout = setTimeout(() => ctrl.abort(), 90000);
+
     try {
-      const res  = await fetch('/api/upload', { method: 'POST', body: form });
+      const res  = await fetch('/api/upload', { method: 'POST', body: form, signal: ctrl.signal });
+      clearTimeout(tout); clearInterval(ticker);
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Upload failed');
       currentFields    = data.fields    || {};
@@ -421,7 +435,11 @@
       currentScanId    = data.id;
       showReview();
     } catch (e) {
-      setStatus('scan-status', '✗ ' + e.message, 'err');
+      clearTimeout(tout); clearInterval(ticker);
+      const msg = e.name === 'AbortError'
+        ? 'Took too long — server may be waking up. Try again.'
+        : e.message;
+      setStatus('scan-status', '✗ ' + msg, 'err');
       scanBtn.disabled = false; scanBtn.textContent = '📷  Take Photo';
     }
   });
@@ -451,16 +469,22 @@
   document.getElementById('confirm-btn').addEventListener('click', async () => {
     const btn = document.getElementById('confirm-btn');
     btn.disabled = true; btn.textContent = 'Sending…';
+    const ctrl2 = new AbortController();
+    const tout2  = setTimeout(() => ctrl2.abort(), 20000);
     try {
       const res  = await fetch('/api/scan/confirm', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room, id: currentScanId, fields: currentFields, scannerName })
+        body: JSON.stringify({ room, id: currentScanId, fields: currentFields, scannerName }),
+        signal: ctrl2.signal
       });
+      clearTimeout(tout2);
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Failed');
       show('screen-done');
     } catch (e) {
-      setStatus('review-status', '✗ ' + e.message, 'err');
+      clearTimeout(tout2);
+      const msg = e.name === 'AbortError' ? 'Server not responding — try again' : e.message;
+      setStatus('review-status', '✗ ' + msg, 'err');
       btn.disabled = false; btn.textContent = '✓ Correct — Fill Form';
     }
   });

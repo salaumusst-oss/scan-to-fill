@@ -90,6 +90,16 @@
     .btn-refill { background: #12231a; color: #6ee7b7; border: 1px solid #1e3a2a; }
     .btn-clear  { background: #2a2a45; color: #f87171; border: 1px solid #3a3a55; }
     .btn-setup  { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; }
+
+    /* NCNMO tab status */
+    #ncnmo-bar { margin-bottom: 7px; border-radius: 9px; padding: 9px 12px; font-size: 12px; line-height: 1.5; }
+    #ncnmo-bar.open   { background: #0d1f14; border: 1px solid #1e3a2a; color: #4ade80; }
+    #ncnmo-bar.closed { background: #1f0d0d; border: 1px solid #3a1e1e; color: #f87171; }
+    #open-form-btn {
+      display: block; width: 100%; margin-top: 7px; padding: 6px;
+      background: #7eb8f7; color: #0f0f1a; border: none; border-radius: 7px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+    }
     .btn:disabled { opacity: .3; cursor: default; }
 
     /* ── Settings panel ── */
@@ -165,6 +175,9 @@
       <div class="dot pulse" id="dot"></div>
       <span class="status-text" id="status-text">Connecting…</span>
     </div>
+
+    <!-- NCNMO tab status — must be open for auto-fill to work -->
+    <div id="ncnmo-bar" style="display:none"></div>
 
     <div id="fields-section"></div>
 

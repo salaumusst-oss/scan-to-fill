@@ -80,6 +80,9 @@ async function loadMain(roomCode) {
     statusText.textContent = `Connected · Room: ${roomCode}`;
     document.getElementById('refill-btn').style.display = 'block';
 
+    // Show whether the NCNMO patient form tab is open
+    checkNcnmoTab();
+
     if (data.fields && Object.values(data.fields).some(v => v)) {
       fillBtn.style.display = 'block';
       const entries = Object.entries(data.fields).filter(([, v]) => v);
@@ -105,6 +108,29 @@ async function loadMain(roomCode) {
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────────
+// ── Check if NCNMO patient form tab is open ────────────────────────────────────
+async function checkNcnmoTab() {
+  const bar = document.getElementById('ncnmo-bar');
+  if (!bar) return;
+  try {
+    const tabs = await chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' });
+    const formTab = tabs.find(t => t.url?.includes('/patient'));
+    bar.style.display = 'block';
+    if (formTab) {
+      bar.className = 'open';
+      bar.innerHTML = '✓ NCNMO form is open &mdash; will auto-fill when scan arrives';
+    } else {
+      bar.className = 'closed';
+      bar.innerHTML = "NCNMO form is not open — auto-fill won't work"
+        + '<button id="open-form-btn">Open patient form →</button>';
+      document.getElementById('open-form-btn').addEventListener('click', () => {
+        chrome.tabs.create({ url: 'https://ncnmoplatformemr.axocheck.com/patient/create/' });
+        window.close();
+      });
+    }
+  } catch {}
+}
+
 async function init() {
   const sessionId = await getOrCreateSession();
 
