@@ -1,6 +1,6 @@
 const express  = require('express');
 const multer   = require('multer');
-const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI   = require('openai');
 const archiver = require('archiver');
 const os   = require('os');
 const path = require('path');
@@ -21,15 +21,12 @@ app.use((req, res, next) => {
   next();
 });
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('\n❌ ANTHROPIC_API_KEY is not set.');
-  console.error(process.env.NODE_ENV === 'production'
-    ? '   Set it in your Render dashboard → Environment tab.\n'
-    : '   Run: export ANTHROPIC_API_KEY=your_key_here\n');
+if (!process.env.OPENAI_API_KEY) {
+  console.error('\n❌ OPENAI_API_KEY is not set. Add it in Render → Environment tab.\n');
   process.exit(1);
 }
 
-const client = new Anthropic();
+const openai = new OpenAI();
 
 // ── Version ────────────────────────────────────────────────────────────────────
 const EXTENSION_VERSION = '1.5.0';
@@ -418,18 +415,18 @@ app.get('/download/extension', (req, res) => {
   archive.finalize();
 });
 
-// ── Claude AI extraction ───────────────────────────────────────────────────────
+// ── GPT-4o extraction ─────────────────────────────────────────────────────────
 async function extractWithAI(buffer, mimeType) {
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5',
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 512,
     messages: [{
       role: 'user',
       content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } },
+        { type: 'image_url', image_url: { url: `data:${mediaType};base64,${buffer.toString('base64')}`, detail: 'high' } },
         { type: 'text', text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
 
 Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
@@ -455,11 +452,10 @@ Rules:
 - Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
 - Return only the JSON, no other text.` }
       ]
-    }],
-    max_tokens: 1024,
+    }]
   });
 
-  const text  = response.content[0].text.trim();
+  const text  = response.choices[0].message.content.trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse AI response');
   const fields = JSON.parse(match[0]);
