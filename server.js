@@ -1,6 +1,6 @@
 const express  = require('express');
 const multer   = require('multer');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
 const archiver = require('archiver');
 const os   = require('os');
 const path = require('path');
@@ -21,12 +21,12 @@ app.use((req, res, next) => {
   next();
 });
 
-if (!process.env.GOOGLE_API_KEY) {
-  console.error('\n❌ GOOGLE_API_KEY is not set. Add it in Render → Environment tab.\n');
+if (!process.env.OPENAI_API_KEY) {
+  console.error('\n❌ OPENAI_API_KEY is not set. Add it in Render → Environment tab.\n');
   process.exit(1);
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const openai = new OpenAI();
 
 // ── Version ────────────────────────────────────────────────────────────────────
 const EXTENSION_VERSION = '1.5.0';
@@ -415,17 +415,20 @@ app.get('/download/extension', (req, res) => {
   archive.finalize();
 });
 
-// ── Gemini 2.5 Flash extraction ───────────────────────────────────────────────
+// ── GPT-4o extraction ─────────────────────────────────────────────────────────
 async function extractWithAI(buffer, mimeType) {
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
-  const model  = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  const result = await model.generateContent([
-    { inlineData: { mimeType: mediaType, data: buffer.toString('base64') } },
-    { text: `This is a patient intake form. Read all the handwritten values exactly as written — do not guess, correct, or assume any values.
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    max_tokens: 512,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image_url', image_url: { url: `data:${mediaType};base64,${buffer.toString('base64')}`, detail: 'high' } },
+        { type: 'text', text: `Look at this form image and read exactly what is written. Copy the text you see into this JSON — do not guess, infer, or auto-correct anything. Write exactly what is on the paper.
 
-Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
 {
   "First Name": "",
   "Last Name": "",
@@ -440,16 +443,12 @@ Return ONLY a JSON object with these exact keys — use empty string "" if a fie
   "Patient Phone No.": ""
 }
 
-Rules:
-- The "Name" line is a full name — split into First Name and Last Name on the first space. If one word, put it all in First Name.
-- Gender: the form may say "M" or "F" or write it in full. Always return exactly "Male" or "Female".
-- Marital Status: the form may use abbreviations — "M" or "Married", "D" or "Divorced", "W" or "Widowed", "S" or "Single". Always return the full word: "Married", "Divorced", "Widowed", or "Single".
-- Age should be just the number (e.g. "45").
-- Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
-- Return only the JSON, no other text.` }
-  ]);
+Return only the JSON. No explanation.` }
+      ]
+    }]
+  });
 
-  const text = result.response.text().trim();
+  const text = response.choices[0].message.content.trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse AI response');
   const fields = JSON.parse(match[0]);
