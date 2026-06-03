@@ -95,43 +95,71 @@ chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'scan-poll')    pollForNewScan();
 });
 
-// ── Auto-fill ──────────────────────────────────────────────────────────────────
-// Two paths both lead here so the fill always fires even if one is unreliable:
-//   Path A: content.js sendMessage  (fast, but SW may be sleeping)
-//   Path B: chrome.storage change   (always wakes the SW — reliable fallback)
+// ── Auto-fill via persistent port ─────────────────────────────────────────────
+// content.js on the NCNMO page opens a chrome.runtime.connect() port.
+// While that port is open the service worker stays ALIVE and can poll
+// /api/pending-fill every 2 seconds without being put to sleep by Chrome.
+// This is the most reliable approach for Manifest V3.
 
-let lastFillTs = 0; // deduplicate if both paths fire for same scan
+const activePorts = new Map(); // tabId → port
 
-async function doFill(fields, ts) {
-  if (ts <= lastFillTs) return;   // already handled this scan
-  lastFillTs = ts;
+chrome.runtime.onConnect.addListener(port => {
+  if (port.name !== 'stf-ncnmo') return;
 
-  const tabs = await chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' });
+  const tabId = port.sender?.tab?.id;
+  if (!tabId) return;
 
-  if (!tabs.length) {
-    // NCNMO form isn't open — open it and fill once loaded
-    const tab = await chrome.tabs.create({ url: 'https://ncnmoplatformemr.axocheck.com/patient/create/' });
-    setTimeout(() => {
-      chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: autoFillFunc, args: [fields] }).catch(() => {});
-    }, 3000);
-  } else {
-    const tab = tabs.find(t => t.url?.includes('/patient')) || tabs[0];
-    chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: autoFillFunc, args: [fields] }).catch(console.error);
+  activePorts.set(tabId, port);
+
+  let pollInterval = null;
+  let lastFillTs   = 0;
+
+  async function poll() {
+    const { roomCode } = await getSettings();
+    if (!roomCode) return;
+
+    try {
+      const res  = await fetch(`${DEFAULT_SERVER}/api/pending-fill?room=${roomCode}`,
+                               { signal: AbortSignal.timeout(8000) });
+      const data = await res.json();
+      if (!data.fields) return;
+
+      const ts = data.timestamp || Date.now();
+      if (ts <= lastFillTs) return;  // already handled
+      lastFillTs = ts;
+
+      // Tell content.js to update its badge
+      try { port.postMessage({ type: 'filling' }); } catch {}
+
+      // Find the NCNMO tab and fill it
+      const tabs = await chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' });
+      const tab  = tabs.find(t => t.url?.includes('/patient')) || tabs[0] || { id: tabId };
+
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id }, world: 'MAIN',
+        func: autoFillFunc, args: [data.fields]
+      }).catch(console.error);
+
+      try { port.postMessage({ type: 'filled' }); } catch {}
+
+    } catch { /* network error or abort — retry next tick */ }
   }
-}
 
-// Path A — message from content.js
-chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.type !== 'auto-fill' || !msg.fields) return;
-  doFill(msg.fields, msg.ts || Date.now());
-});
+  // Start polling every 2 seconds while the page is open
+  pollInterval = setInterval(poll, 2000);
+  poll(); // immediate first check
 
-// Path B — storage change (fires even when SW was sleeping)
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local' || !changes.stfFill) return;
-  const { fields, ts } = changes.stfFill.newValue;
-  doFill(fields, ts);
-  chrome.storage.local.remove('stfFill');
+  port.onMessage.addListener(msg => {
+    // 'ping' from content.js keeps the connection alive
+    if (msg.type === 'ping' && msg.roomCode) {
+      // Refresh room code if it changed
+    }
+  });
+
+  port.onDisconnect.addListener(() => {
+    clearInterval(pollInterval);
+    activePorts.delete(tabId);
+  });
 });
 
 // ── Standalone fill function — runs in the page's MAIN world ───────────────────
