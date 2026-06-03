@@ -1,6 +1,6 @@
 const DEFAULT_SERVER = 'https://scan-to-fill.onrender.com';
 
-// ── Session ID: unique ID for this laptop, generated once ──────────────────────
+// ── Session ID ────────────────────────────────────────────────────────────────
 async function getOrCreateSession() {
   return new Promise(resolve => {
     chrome.storage.local.get({ sessionId: '' }, data => {
@@ -18,7 +18,7 @@ async function getSettings() {
   });
 }
 
-// ── Badge: green dot = server reachable, red ! = not ──────────────────────────
+// ── Badge ─────────────────────────────────────────────────────────────────────
 async function checkServer() {
   try {
     await fetch(DEFAULT_SERVER + '/api/latest', { signal: AbortSignal.timeout(15000) });
@@ -30,9 +30,7 @@ async function checkServer() {
   }
 }
 
-// ── Heartbeat: registers + keeps this laptop "online" on the server ────────────
-// We call /api/connect (not /api/heartbeat) so the laptop is re-registered
-// automatically after a server restart, and the website always shows it.
+// ── Heartbeat ─────────────────────────────────────────────────────────────────
 async function sendHeartbeat() {
   const { roomCode, sessionId } = await getSettings();
   if (!roomCode || !sessionId) return;
@@ -43,127 +41,112 @@ async function sendHeartbeat() {
       body: JSON.stringify({ room: roomCode, session: sessionId, type: 'laptop', name: 'Laptop' }),
       signal: AbortSignal.timeout(10000)
     });
-  } catch { /* ignore — will retry on next tick */ }
+  } catch {}
 }
 
-// ── Poll for new scans → desktop notification ─────────────────────────────────
-// Watches the unopened queue — fires when a new scan arrives on the website.
+// ── Scan notifications ────────────────────────────────────────────────────────
 async function pollForNewScan() {
   const { roomCode } = await getSettings();
   if (!roomCode) return;
-
   return new Promise(resolve => {
     chrome.storage.local.get({ lastSeenTimestamp: 0 }, async ({ lastSeenTimestamp }) => {
       try {
         const res  = await fetch(`${DEFAULT_SERVER}/api/scans?room=${roomCode}`, { signal: AbortSignal.timeout(10000) });
         const data = await res.json();
-
-        // Check the most recent unread scan
         const newest = data.unopened?.[0];
         if (newest && newest.timestamp > lastSeenTimestamp) {
           chrome.storage.local.set({ lastSeenTimestamp: newest.timestamp });
-
           const f    = newest.fields || {};
           const name = [f['First Name'], f['Last Name']].filter(Boolean).join(' ') || 'a patient';
-          const age  = f['Age'] ? `, ${f['Age']} yrs` : '';
-
           chrome.notifications.create({
-            type:    'basic',
-            iconUrl: 'icon.png',
-            title:   '📄 New Scan Arrived!',
-            message: `${name}${age} — go to the website and click the scan to fill the form.`
+            type: 'basic', iconUrl: 'icon.png',
+            title: 'New Scan Arrived!',
+            message: `${name} — form will auto-fill when confirmed.`
           });
         }
-      } catch { /* network error — ignore */ }
+      } catch {}
       resolve();
     });
   });
 }
 
-// ── Alarms ─────────────────────────────────────────────────────────────────────
-// 'heartbeat'   — every 1 min: keep laptop "online" in the room
-// 'server-check'— every 2 min: update badge colour
-// 'scan-poll'   — every 1 min: check for new scans & notify
-
+// ── Alarms ────────────────────────────────────────────────────────────────────
 chrome.alarms.create('heartbeat',    { periodInMinutes: 1 });
 chrome.alarms.create('server-check', { periodInMinutes: 2 });
 chrome.alarms.create('scan-poll',    { periodInMinutes: 1 });
+chrome.alarms.create('fill-poll',    { periodInMinutes: 1 });
 
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'heartbeat')    sendHeartbeat();
   if (alarm.name === 'server-check') checkServer();
   if (alarm.name === 'scan-poll')    pollForNewScan();
+  if (alarm.name === 'fill-poll')    startFillPoll();
 });
 
-// ── Auto-fill via persistent port ─────────────────────────────────────────────
-// content.js on the NCNMO page opens a chrome.runtime.connect() port.
-// While that port is open the service worker stays ALIVE and can poll
-// /api/pending-fill every 2 seconds without being put to sleep by Chrome.
-// This is the most reliable approach for Manifest V3.
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTO-FILL POLLING — runs entirely in background.js, no port needed.
+// Polls /api/pending-fill every 3 seconds while an NCNMO tab is open.
+// ══════════════════════════════════════════════════════════════════════════════
 
-const activePorts = new Map(); // tabId → port
+let fillInterval = null;
+let lastFillTs   = 0;
 
-chrome.runtime.onConnect.addListener(port => {
-  if (port.name !== 'stf-ncnmo') return;
+async function pollPendingFill() {
+  const { roomCode } = await getSettings();
+  if (!roomCode) return;
 
-  const tabId = port.sender?.tab?.id;
-  if (!tabId) return;
+  // Only poll if NCNMO tab is actually open
+  const tabs = await chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' });
+  if (!tabs.length) return;
 
-  activePorts.set(tabId, port);
+  try {
+    const res  = await fetch(`${DEFAULT_SERVER}/api/pending-fill?room=${roomCode}`,
+                             { signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    if (!data.fields) return;
 
-  let pollInterval = null;
-  let lastFillTs   = 0;
+    const ts = data.timestamp || Date.now();
+    if (ts <= lastFillTs) return;
+    lastFillTs = ts;
 
-  async function poll() {
-    const { roomCode } = await getSettings();
-    if (!roomCode) return;
+    // Find the patient form tab
+    const formTab = tabs.find(t => t.url?.includes('/patient')) || tabs[0];
 
-    try {
-      const res  = await fetch(`${DEFAULT_SERVER}/api/pending-fill?room=${roomCode}`,
-                               { signal: AbortSignal.timeout(8000) });
-      const data = await res.json();
-      if (!data.fields) return;
+    await chrome.scripting.executeScript({
+      target: { tabId: formTab.id },
+      world: 'MAIN',
+      func: autoFillFunc,
+      args: [data.fields]
+    }).catch(e => console.error('[STF] fill error:', e));
 
-      const ts = data.timestamp || Date.now();
-      if (ts <= lastFillTs) return;  // already handled
-      lastFillTs = ts;
+  } catch {}
+}
 
-      // Tell content.js to update its badge
-      try { port.postMessage({ type: 'filling' }); } catch {}
+function startFillPoll() {
+  if (fillInterval) return; // already running
+  fillInterval = setInterval(pollPendingFill, 3000);
+  pollPendingFill(); // immediate first check
+}
 
-      // Find the NCNMO tab and fill it
-      const tabs = await chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' });
-      const tab  = tabs.find(t => t.url?.includes('/patient')) || tabs[0] || { id: tabId };
+function stopFillPoll() {
+  if (fillInterval) { clearInterval(fillInterval); fillInterval = null; }
+}
 
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id }, world: 'MAIN',
-        func: autoFillFunc, args: [data.fields]
-      }).catch(console.error);
-
-      try { port.postMessage({ type: 'filled' }); } catch {}
-
-    } catch { /* network error or abort — retry next tick */ }
-  }
-
-  // Start polling every 2 seconds while the page is open
-  pollInterval = setInterval(poll, 2000);
-  poll(); // immediate first check
-
-  port.onMessage.addListener(msg => {
-    // 'ping' from content.js keeps the connection alive
-    if (msg.type === 'ping' && msg.roomCode) {
-      // Refresh room code if it changed
-    }
-  });
-
-  port.onDisconnect.addListener(() => {
-    clearInterval(pollInterval);
-    activePorts.delete(tabId);
-  });
+// Start polling when an NCNMO tab opens, stop when it closes
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (tab.url?.includes('ncnmoplatformemr.axocheck.com')) startFillPoll();
+});
+chrome.tabs.onRemoved.addListener(async () => {
+  const tabs = await chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' });
+  if (!tabs.length) stopFillPoll();
 });
 
-// ── Standalone fill function — runs in the page's MAIN world ───────────────────
-// Must be fully self-contained (no closures over outer variables).
+// Also start on startup in case NCNMO tab is already open
+chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' }).then(tabs => {
+  if (tabs.length) startFillPoll();
+});
+
+// ── Fill function — runs in the page's MAIN world ─────────────────────────────
 async function autoFillFunc(fields) {
   let filled = 0;
 
@@ -243,7 +226,7 @@ async function autoFillFunc(fields) {
     [() => findSelectByOptions('male','female')    || findSelectByLabel('Gender'),         gender],
     [() => findSelectByOptions('married','single') || findSelectByLabel('Marital Status'), marital],
     [() => findSelectByOptions('kwara')            || findSelectByLabel('State'),          'Kwara'],
-    [() => findSelectByOptions('ajase')           || findSelectByLabel('Location'),       'Ajase'],
+    [() => findSelectByOptions('ajase')            || findSelectByLabel('Location'),       'Ajase'],
   ]) {
     if (!value) continue;
     await new Promise(r => setTimeout(r, 200));
@@ -251,7 +234,7 @@ async function autoFillFunc(fields) {
     if (s && setSelect(s, value)) filled++;
   }
 
-  // Date of Birth picker
+  // Date of Birth
   let yr = null, mo = 0, dy = 1;
   if (fields['Date of Birth']) {
     const d = new Date(fields['Date of Birth']);
@@ -299,7 +282,7 @@ async function autoFillFunc(fields) {
   document.body.appendChild(t);
 }
 
-// ── Startup ────────────────────────────────────────────────────────────────────
+// ── Startup ───────────────────────────────────────────────────────────────────
 getOrCreateSession();
 checkServer();
 sendHeartbeat();
