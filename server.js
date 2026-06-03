@@ -424,7 +424,7 @@ async function extractWithAI(buffer, mimeType) {
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-sonnet-4-5',
     messages: [{
       role: 'user',
       content: [
@@ -443,8 +443,7 @@ Return ONLY a JSON object with these exact keys — use empty string "" if a fie
   "Address": "",
   "Religion": "",
   "Next of Kin Phone": "",
-  "Patient Phone No.": "",
-  "_uncertain": []
+  "Patient Phone No.": ""
 }
 
 Rules:
@@ -453,19 +452,30 @@ Rules:
 - Marital Status: the form may use abbreviations — "M" or "Married", "D" or "Divorced", "W" or "Widowed", "S" or "Single". Always return the full word: "Married", "Divorced", "Widowed", or "Single".
 - Age should be just the number (e.g. "45").
 - Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
-- "_uncertain": list any field names where the handwriting was hard to read, ambiguous, or you are less than 80% confident. Example: ["Date of Birth", "Last Name"]. Leave empty [] if everything was clear.
 - Return only the JSON, no other text.` }
       ]
     }],
-    max_tokens: 600,
+    max_tokens: 1024,
   });
 
   const text  = response.content[0].text.trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse AI response');
-  const parsed   = JSON.parse(match[0]);
-  const uncertain = Array.isArray(parsed._uncertain) ? parsed._uncertain : [];
-  const fields    = Object.fromEntries(Object.entries(parsed).filter(([k]) => k !== '_uncertain'));
+  const fields = JSON.parse(match[0]);
+
+  // Detect uncertain fields from the output — no extra AI call needed.
+  // Flag any field whose value looks questionable.
+  const uncertain = Object.entries(fields)
+    .filter(([key, val]) => {
+      if (!val) return false;
+      if (/[?]/.test(val))                                            return true; // contains ?
+      if (key === 'Age'           && !/^\d{1,3}$/.test(val.trim()))  return true; // non-numeric age
+      if (key === 'Date of Birth' && !/^\d{4}-\d{2}-\d{2}$/.test(val)) return true; // bad date format
+      if (['First Name','Last Name'].includes(key) && val.trim().length === 1) return true; // single letter
+      return false;
+    })
+    .map(([key]) => key);
+
   return { fields, uncertain };
 }
 
