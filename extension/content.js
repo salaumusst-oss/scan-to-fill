@@ -42,6 +42,40 @@ function setBadge(text, color) {
   b.style.background = color === '#4ade80' ? '#0d1f14' : color === '#fbbf24' ? '#1f1800' : '#1a0d0d';
 }
 
+// ── Auto-next patient — navigates to /patient/create/ after form submit ─────────
+function setupAutoNext() {
+  // Intercept React SPA navigation (history.pushState / replaceState)
+  const orig = {
+    push:    history.pushState.bind(history),
+    replace: history.replaceState.bind(history),
+  };
+
+  function onNav(newUrl) {
+    if (!newUrl) return;
+    const path = typeof newUrl === 'string' ? newUrl : String(newUrl);
+    const wasOnCreate = location.pathname.includes('/patient/create');
+    const goingAway   = !path.includes('/patient/create');
+    if (wasOnCreate && goingAway) {
+      // User submitted — check toggle and redirect if ON
+      chrome.storage.local.get({ autoNext: true }, ({ autoNext }) => {
+        if (autoNext) {
+          setTimeout(() => {
+            location.href = 'https://ncnmoplatformemr.axocheck.com/patient/create/';
+          }, 600);
+        }
+      });
+    }
+  }
+
+  history.pushState    = (s, t, url) => { orig.push(s, t, url);    onNav(url); };
+  history.replaceState = (s, t, url) => { orig.replace(s, t, url); onNav(url); };
+  window.addEventListener('popstate', () => onNav(location.pathname));
+}
+
+if (location.hostname === NCNMO_HOST) {
+  setupAutoNext();
+}
+
 // ── Persistent port — keeps the service worker alive while page is open ───────
 function connectPort(roomCode) {
   let port;

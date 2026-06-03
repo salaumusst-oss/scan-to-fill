@@ -92,6 +92,28 @@
     .btn-setup  { background: #1a1a2e; color: #7eb8f7; border: 1px solid #2a2a45; }
     .btn-test   { background: #1a1a2e; color: #fbbf24; border: 1px solid #2a2410; }
 
+    /* Auto-next toggle */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1a1a2e; border: 1px solid #2a2a45;
+      border-radius: 10px; padding: 10px 13px; margin-bottom: 7px;
+    }
+    .toggle-label { font-size: 12px; font-weight: 700; color: #a0a0c0; }
+    .toggle-sub   { font-size: 10px; color: #555; margin-top: 2px; }
+    .switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #2a2a45;
+      border-radius: 22px; cursor: pointer; transition: .2s;
+    }
+    .slider::before {
+      content: ''; position: absolute;
+      width: 16px; height: 16px; left: 3px; bottom: 3px;
+      background: #555; border-radius: 50%; transition: .2s;
+    }
+    .switch input:checked + .slider { background: #1e3a2a; }
+    .switch input:checked + .slider::before { background: #4ade80; transform: translateX(16px); }
+
     /* Test results */
     #test-results {
       display: none; margin-top: 7px; border-radius: 9px; padding: 10px 12px;
@@ -193,6 +215,19 @@
 
     <button class="btn btn-fill"   id="fill-btn"   style="display:none">↩ Fill Page Now</button>
     <button class="btn btn-refill" id="refill-btn" style="display:none">↺ Re-fill last patient</button>
+
+    <!-- Auto-next patient toggle -->
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Auto Next Patient</div>
+        <div class="toggle-sub">After submit → loads new patient form</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="auto-next-toggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
     <button class="btn btn-test"   id="test-btn">⚡ Test Page Connection</button>
     <div id="test-results"></div>
     <button class="btn btn-clear"  id="clear-btn">✕ Clear Form</button>

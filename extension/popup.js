@@ -80,6 +80,11 @@ async function loadMain(roomCode) {
     statusText.textContent = `Connected · Room: ${roomCode}`;
     document.getElementById('refill-btn').style.display = 'block';
 
+    // Load auto-next toggle state
+    chrome.storage.local.get({ autoNext: true }, ({ autoNext }) => {
+      document.getElementById('auto-next-toggle').checked = autoNext;
+    });
+
     // Show whether the NCNMO patient form tab is open
     checkNcnmoTab();
 
@@ -374,6 +379,9 @@ async function init() {
   });
 
   // ── Fill / Clear / Re-fill ───────────────────────────────────────────────────
+  document.getElementById('auto-next-toggle').addEventListener('change', function () {
+    chrome.storage.local.set({ autoNext: this.checked });
+  });
   document.getElementById('fill-btn').addEventListener('click', fillPage);
   document.getElementById('test-btn').addEventListener('click', testPageConnection);
   document.getElementById('clear-btn').addEventListener('click', clearPage);
