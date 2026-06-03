@@ -420,7 +420,6 @@ async function _autoFill(fields) {
         });
         document.body.appendChild(t);
         setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(() => t.remove(), 350); }, 3500);
-      },
 }
 
 // ── Run fill on the active tab ─────────────────────────────────────────────────
