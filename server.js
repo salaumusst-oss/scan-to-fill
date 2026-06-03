@@ -1,6 +1,6 @@
 const express  = require('express');
 const multer   = require('multer');
-const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI   = require('openai');
 const archiver = require('archiver');
 const os   = require('os');
 const path = require('path');
@@ -21,15 +21,15 @@ app.use((req, res, next) => {
   next();
 });
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('\n❌ ANTHROPIC_API_KEY is not set.');
+if (!process.env.OPENAI_API_KEY) {
+  console.error('\n❌ OPENAI_API_KEY is not set.');
   console.error(process.env.NODE_ENV === 'production'
     ? '   Set it in your Render dashboard → Environment tab.\n'
-    : '   Run: export ANTHROPIC_API_KEY=your_key_here\n');
+    : '   Run: export OPENAI_API_KEY=your_key_here\n');
   process.exit(1);
 }
 
-const client = new Anthropic();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ── Version ────────────────────────────────────────────────────────────────────
 const EXTENSION_VERSION = '1.5.0';
@@ -419,18 +419,25 @@ app.get('/download/extension', (req, res) => {
 });
 
 // ── Claude AI extraction ───────────────────────────────────────────────────────
+// ── GPT-4o extraction ─────────────────────────────────────────────────────────
 async function extractWithAI(buffer, mimeType) {
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
+  const b64        = buffer.toString('base64');
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5',
+  const response = await openai.chat.completions.create({
+    model:      'gpt-4o',
     max_tokens: 512,
     messages: [{
       role: 'user',
       content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } },
-        { type: 'text', text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
+        {
+          type:      'image_url',
+          image_url: { url: `data:${mediaType};base64,${b64}`, detail: 'high' }
+        },
+        {
+          type: 'text',
+          text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
 
 Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
 {
@@ -453,26 +460,25 @@ Rules:
 - Marital Status: the form may use abbreviations — "M" or "Married", "D" or "Divorced", "W" or "Widowed", "S" or "Single". Always return the full word: "Married", "Divorced", "Widowed", or "Single".
 - Age should be just the number (e.g. "45").
 - Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
-- Return only the JSON, no other text.` }
+- Return only the JSON, no other text.`
+        }
       ]
-    }],
-    max_tokens: 1024,
+    }]
   });
 
-  const text  = response.content[0].text.trim();
+  const text  = response.choices[0].message.content.trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse AI response');
   const fields = JSON.parse(match[0]);
 
-  // Detect uncertain fields from the output — no extra AI call needed.
-  // Flag any field whose value looks questionable.
+  // Heuristic uncertainty flags
   const uncertain = Object.entries(fields)
     .filter(([key, val]) => {
       if (!val) return false;
-      if (/[?]/.test(val))                                            return true; // contains ?
-      if (key === 'Age'           && !/^\d{1,3}$/.test(val.trim()))  return true; // non-numeric age
-      if (key === 'Date of Birth' && !/^\d{4}-\d{2}-\d{2}$/.test(val)) return true; // bad date format
-      if (['First Name','Last Name'].includes(key) && val.trim().length === 1) return true; // single letter
+      if (/[?]/.test(val))                                               return true;
+      if (key === 'Age'           && !/^\d{1,3}$/.test(val.trim()))     return true;
+      if (key === 'Date of Birth' && !/^\d{4}-\d{2}-\d{2}$/.test(val)) return true;
+      if (['First Name','Last Name'].includes(key) && val.trim().length === 1) return true;
       return false;
     })
     .map(([key]) => key);
