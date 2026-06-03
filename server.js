@@ -1,6 +1,6 @@
 const express  = require('express');
 const multer   = require('multer');
-const OpenAI   = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const archiver = require('archiver');
 const os   = require('os');
 const path = require('path');
@@ -21,12 +21,12 @@ app.use((req, res, next) => {
   next();
 });
 
-if (!process.env.OPENAI_API_KEY) {
-  console.error('\n❌ OPENAI_API_KEY is not set. Add it in Render → Environment tab.\n');
+if (!process.env.GOOGLE_API_KEY) {
+  console.error('\n❌ GOOGLE_API_KEY is not set. Add it in Render → Environment tab.\n');
   process.exit(1);
 }
 
-const openai = new OpenAI();
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 // ── Version ────────────────────────────────────────────────────────────────────
 const EXTENSION_VERSION = '1.5.0';
@@ -415,19 +415,15 @@ app.get('/download/extension', (req, res) => {
   archive.finalize();
 });
 
-// ── GPT-4o extraction ─────────────────────────────────────────────────────────
+// ── Gemini 2.5 Flash extraction ───────────────────────────────────────────────
 async function extractWithAI(buffer, mimeType) {
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const mediaType  = validTypes.includes(mimeType) ? mimeType : 'image/jpeg';
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    max_tokens: 512,
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'image_url', image_url: { url: `data:${mediaType};base64,${buffer.toString('base64')}`, detail: 'high' } },
-        { type: 'text', text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
+  const model  = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const result = await model.generateContent([
+    { inlineData: { mimeType: mediaType, data: buffer.toString('base64') } },
+    { text: `This is an NCNMO Medical Mission patient intake form. Read all the handwritten values filled in on the form.
 
 Return ONLY a JSON object with these exact keys — use empty string "" if a field is blank or unreadable:
 {
@@ -451,11 +447,9 @@ Rules:
 - Age should be just the number (e.g. "45").
 - Date of Birth: only fill if an actual date is explicitly written on the form (format as YYYY-MM-DD). If only age is written, leave this empty.
 - Return only the JSON, no other text.` }
-      ]
-    }]
-  });
+  ]);
 
-  const text  = response.choices[0].message.content.trim();
+  const text = result.response.text().trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse AI response');
   const fields = JSON.parse(match[0]);
