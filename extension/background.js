@@ -95,20 +95,43 @@ chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'scan-poll')    pollForNewScan();
 });
 
-// ── Auto-fill: triggered by content.js on the NCNMO form page ─────────────────
-// Executes in MAIN world (where React's event system lives), then navigates
-// to a fresh patient form so the next scan can be processed immediately.
-chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (msg.type !== 'auto-fill' || !sender.tab?.id) return;
-  const tabId = sender.tab.id;
+// ── Auto-fill ──────────────────────────────────────────────────────────────────
+// Two paths both lead here so the fill always fires even if one is unreliable:
+//   Path A: content.js sendMessage  (fast, but SW may be sleeping)
+//   Path B: chrome.storage change   (always wakes the SW — reliable fallback)
 
-  chrome.scripting.executeScript({
-    target: { tabId },
-    world:  'MAIN',
-    func:   autoFillFunc,
-    args:   [msg.fields]
-  }).catch(console.error);
-  // No auto-navigation — user reviews the filled form and clicks Submit manually.
+let lastFillTs = 0; // deduplicate if both paths fire for same scan
+
+async function doFill(fields, ts) {
+  if (ts <= lastFillTs) return;   // already handled this scan
+  lastFillTs = ts;
+
+  const tabs = await chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' });
+
+  if (!tabs.length) {
+    // NCNMO form isn't open — open it and fill once loaded
+    const tab = await chrome.tabs.create({ url: 'https://ncnmoplatformemr.axocheck.com/patient/create/' });
+    setTimeout(() => {
+      chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: autoFillFunc, args: [fields] }).catch(() => {});
+    }, 3000);
+  } else {
+    const tab = tabs.find(t => t.url?.includes('/patient')) || tabs[0];
+    chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: autoFillFunc, args: [fields] }).catch(console.error);
+  }
+}
+
+// Path A — message from content.js
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type !== 'auto-fill' || !msg.fields) return;
+  doFill(msg.fields, msg.ts || Date.now());
+});
+
+// Path B — storage change (fires even when SW was sleeping)
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes.stfFill) return;
+  const { fields, ts } = changes.stfFill.newValue;
+  doFill(fields, ts);
+  chrome.storage.local.remove('stfFill');
 });
 
 // ── Standalone fill function — runs in the page's MAIN world ───────────────────
