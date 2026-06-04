@@ -112,11 +112,15 @@ async function pollPendingFill() {
     // Find the patient form tab
     const formTab = tabs.find(t => t.url?.includes('/patient')) || tabs[0];
 
+    const { autoSubmit } = await new Promise(resolve =>
+      chrome.storage.local.get({ autoSubmit: false }, resolve)
+    );
+
     await chrome.scripting.executeScript({
       target: { tabId: formTab.id },
       world: 'MAIN',
       func: autoFillFunc,
-      args: [data.fields]
+      args: [data.fields, autoSubmit]
     }).catch(e => console.error('[STF] fill error:', e));
 
   } catch {}
@@ -147,7 +151,7 @@ chrome.tabs.query({ url: '*://ncnmoplatformemr.axocheck.com/*' }).then(tabs => {
 });
 
 // ── Fill function — runs in the page's MAIN world ─────────────────────────────
-async function autoFillFunc(fields) {
+async function autoFillFunc(fields, autoSubmit) {
   let filled = 0;
 
   function expandGender(v) {
@@ -265,12 +269,26 @@ async function autoFillFunc(fields) {
     }
   }
 
+  // Auto-submit
+  if (autoSubmit && filled > 0) {
+    await new Promise(r => setTimeout(r, 600));
+    const submitBtn = (
+      document.querySelector('button[type="submit"]') ||
+      [...document.querySelectorAll('button')].find(b =>
+        /submit|save|register|create|add patient/i.test(b.textContent.trim())
+      )
+    );
+    if (submitBtn && !submitBtn.disabled) {
+      submitBtn.click();
+    }
+  }
+
   // Toast
   document.getElementById('stf-toast')?.remove();
   const t = document.createElement('div');
   t.id = 'stf-toast';
   t.textContent = filled > 0
-    ? `✓ Filled ${filled} fields — review and click Submit`
+    ? (autoSubmit ? `✓ Filled ${filled} fields — submitting…` : `✓ Filled ${filled} fields — review and click Submit`)
     : '⚠ No fields filled — check the form';
   Object.assign(t.style, {
     position:'fixed', bottom:'24px', right:'24px', zIndex:'2147483647',
